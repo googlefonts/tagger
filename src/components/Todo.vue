@@ -16,6 +16,10 @@ const props = defineProps({
         type: GF,
         required: true
     },
+    categoryFilter: {
+        type: String,
+        required: false
+    }
 })
 
 const newScore = ref(0);
@@ -47,6 +51,9 @@ const tagNames = computed(() => {
 const completeness = computed(() => {
     console.log("Calculating completeness...");
     const families = props.gf.families;
+    if (props.categoryFilter) {
+        return families.filter(family => family.hasTagging(props.categoryFilter!)).length / families.length * 100;
+    }
     const uniqueTags = tagNames.value;
     const totalTaggings = families.map(family => family.taggings.length).reduce((a, b) => a + b, 0);
     return (totalTaggings / (families.length * uniqueTags.length)) * 100;
@@ -62,7 +69,7 @@ function getNextUntagged(): Untagged | null {
         // Grab a random family
         const family = families[Math.floor(Math.random() * families.length)];
         // Grab a random tagname
-        const tagname = uniqueTags[Math.floor(Math.random() * uniqueTags.length)];
+        const tagname = props.categoryFilter || uniqueTags[Math.floor(Math.random() * uniqueTags.length)];
         if (!props.gf.tags[tagname]) {
             console.warn("Tag with no definition!!", tagname);
             continue
@@ -103,6 +110,9 @@ const randomUntagged = computed(randomUntaggedRefreshable.getter);
 
 <template>
     <div id="todo-wrapper">
+        <v-select v-model="categoryFilter"
+        :options="props.gf.uniqueTagNames()"
+        placeholder="Filter by category" class="inline-block"/>
         <div v-if="!randomUntagged">All fonts are tagged!</div>
 
         <div v-else>
@@ -110,7 +120,7 @@ const randomUntagged = computed(randomUntaggedRefreshable.getter);
                 <div class="progress" :style="{ width: completeness + '%' }">
                 </div>
                 <div class="progress-text">
-                    Tagging is {{ completeness.toFixed(3) }}% complete...
+                    Tagging is {{ completeness.toFixed(3) }}% complete<span v-if="props.categoryFilter"> in {{ props.categoryFilter }}</span>
                 </div>
             </div>
 
