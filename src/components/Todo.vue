@@ -29,14 +29,21 @@ function useRefreshable<T>(getter: () => T): {
     refresh(): void;
 } {
     const refreshKey = ref(0);
+    let cache: T | null = null;
 
     return {
         getter() {
             refreshKey.value;
-            return getter();
+            if (cache) {
+                return cache;
+            }
+            const result: T = getter();
+            cache = result;
+            return result;
         },
         refresh() {
             refreshKey.value++;
+            cache = null;
         },
     };
 }
