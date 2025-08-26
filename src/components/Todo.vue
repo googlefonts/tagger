@@ -2,7 +2,7 @@
 import { EventBus } from '@/eventbus';
 import { Font, GF, StaticTagging, Tag } from '@/models';
 import type { Exemplars } from '@/models';
-import { computed, defineProps, ref } from 'vue';
+import { computed, defineProps, ref, watch } from 'vue';
 
 interface Untagged {
     font: Font;
@@ -111,12 +111,31 @@ function tagIt(untagged: Untagged, score: number) {
     console.log(`There are now ` + props.gf.allTaggings.length + ` taggings in the GF.`);
 }
 
+function handleKeyPress(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+        const untagged = randomUntagged.value;
+        if (untagged) {
+            tagIt(untagged, newScore.value);
+            randomUntaggedRefreshable.refresh();
+        }
+    }
+    if (randomUntagged.value && (
+        parseInt(event.key, 10) >= 0 && parseInt(event.key, 10) <= 9
+    )) {
+        newScore.value = parseInt(event.key, 10) * 10;
+    }
+}
+
 const randomUntaggedRefreshable = useRefreshable(getNextUntagged);
 const randomUntagged = computed(randomUntaggedRefreshable.getter);
+
+watch(() => props.categoryFilter, () => {
+    randomUntaggedRefreshable.refresh();
+});
 </script>
 
 <template>
-    <div id="todo-wrapper">
+    <div id="todo-wrapper" v-on:keyup="handleKeyPress" tabindex="0">
         <v-select v-model="categoryFilter"
         :options="props.gf.uniqueTagNames()"
         placeholder="Filter by category" class="inline-block"/>
@@ -171,7 +190,7 @@ const randomUntagged = computed(randomUntaggedRefreshable.getter);
 
             <p>
             <div class="rangeslider">
-                <input type="range" v-model="newScore" min="0" max="100" step="1" style="vertical-align: middle;">
+                <input type="range" v-model="newScore" min="0" max="100" step="5" style="vertical-align: middle;">
                 <span>0</span>
                 <span>10</span>
                 <span>20</span>
