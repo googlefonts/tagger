@@ -134,7 +134,7 @@ const randomUntagged = computed(randomUntaggedRefreshable.getter);
             <h1>Is
                 <span class="family" :style="{ fontFamily: randomUntagged.font.name }">{{ randomUntagged.font.name
                 }}</span>
-                a {{ randomUntagged.tag.friendlyName }} font?
+                a<span v-if="randomUntagged.tag.friendlyName.match(/^[aeiou]/)">n</span> {{ randomUntagged.tag.friendlyName }} font?
 
             </h1>
             <h3 v-if="randomUntagged.tag.superShortDescription">({{ randomUntagged.tag.superShortDescription }})</h3>
