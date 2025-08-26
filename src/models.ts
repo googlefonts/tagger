@@ -289,6 +289,9 @@ export class GF {
     let csvData = parseCSV(data, "rule", "severity", "description");
 
     for (let item of csvData) {
+      if (!item.rule || !item.severity || !item.description) {
+        continue;
+      }
       this.lintRules.push({
         rule: item.rule.trim(),
         description: item.description.trim(),
