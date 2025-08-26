@@ -36,7 +36,6 @@ const font = ref(props.font);
 
 const selectedFamily = computed(() => {
   const familyName = font.value;
-  console.log("Selected family for font:", familyName);
   return props.gf.family(familyName);
 });
 
@@ -49,20 +48,6 @@ const location = computed(() => {
     return acc;
   }, {} as Record<string, number>);
 });
-
-
-const cssStyle = computed(() => {
-  if (!selectedFamily.value) return '';
-  let res = `font-family: '${selectedFamily.value.name}'; font-size: ${fontSize.value}pt;`;
-  if (selectedFamily.value.isVF) {
-    res += ' font-variation-settings:';
-  }
-  selectedFamily.value.axes.forEach(axis => {
-    res += ` '${axis.tag}' ${axis.displayValue},`;
-  });
-  return res.slice(0, -1) + ';'; // Remove trailing comma and add semicolon
-});
-
 
 const similarFamilies = computed(() => {
   return props.gf.similarFamilies(font.value, 10) || [];
@@ -146,13 +131,7 @@ onBeforeUpdate(() => {
       <label>Font size:</label>
       <input type="range" v-model="fontSize" min="8" max="100" default="32" /> {{ fontSize }}pt
     </div>
-    <div contenteditable="true" :style="cssStyle" style="border: 1px solid #ccc; padding: 1em;">
-      Grumpy wizards make toxic brew for the evil Queen and Jack.
-    </div>
-    <div v-for="axis in selectedFamily?.axes" :key="axis.tag">
-      <label>{{ axis.tag }}: {{ axis.displayValue }}</label>
-      <input type="range" v-model="axis.displayValue" :min="axis.min" :max="axis.max" />
-    </div>
+    <sample-text :font="selectedFamily" :fontSize="fontSize"/>
     <ul>
       <li v-for="tagging in selectedFamily?.taggings" :key="tagging.tag.name + selectedFamily?.name">
         <span class="tag-name">{{ tagging.tag.name }}

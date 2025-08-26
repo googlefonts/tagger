@@ -2,7 +2,7 @@
 import { EventBus } from '@/eventbus';
 import { Font, GF, StaticTagging, Tag } from '@/models';
 import type { Exemplars } from '@/models';
-import { computed, defineProps, ref } from 'vue';
+import { computed, defineProps, ref, watch } from 'vue';
 
 interface Untagged {
     font: Font;
@@ -16,6 +16,10 @@ const props = defineProps({
         type: GF,
         required: true
     },
+    categoryFilter: {
+        type: String,
+        required: false
+    }
 })
 
 const newScore = ref(0);
@@ -25,14 +29,21 @@ function useRefreshable<T>(getter: () => T): {
     refresh(): void;
 } {
     const refreshKey = ref(0);
+    let cache: T | null = null;
 
     return {
         getter() {
             refreshKey.value;
-            return getter();
+            if (cache) {
+                return cache;
+            }
+            const result: T = getter();
+            cache = result;
+            return result;
         },
         refresh() {
             refreshKey.value++;
+            cache = null;
         },
     };
 }
@@ -47,6 +58,9 @@ const tagNames = computed(() => {
 const completeness = computed(() => {
     console.log("Calculating completeness...");
     const families = props.gf.families;
+    if (props.categoryFilter) {
+        return families.filter(family => family.hasTagging(props.categoryFilter!)).length / families.length * 100;
+    }
     const uniqueTags = tagNames.value;
     const totalTaggings = families.map(family => family.taggings.length).reduce((a, b) => a + b, 0);
     return (totalTaggings / (families.length * uniqueTags.length)) * 100;
@@ -62,7 +76,7 @@ function getNextUntagged(): Untagged | null {
         // Grab a random family
         const family = families[Math.floor(Math.random() * families.length)];
         // Grab a random tagname
-        const tagname = uniqueTags[Math.floor(Math.random() * uniqueTags.length)];
+        const tagname = props.categoryFilter || uniqueTags[Math.floor(Math.random() * uniqueTags.length)];
         if (!props.gf.tags[tagname]) {
             console.warn("Tag with no definition!!", tagname);
             continue
@@ -97,12 +111,34 @@ function tagIt(untagged: Untagged, score: number) {
     console.log(`There are now ` + props.gf.allTaggings.length + ` taggings in the GF.`);
 }
 
+function handleKeyPress(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+        const untagged = randomUntagged.value;
+        if (untagged) {
+            tagIt(untagged, newScore.value);
+            randomUntaggedRefreshable.refresh();
+        }
+    }
+    if (randomUntagged.value && (
+        parseInt(event.key, 10) >= 0 && parseInt(event.key, 10) <= 9
+    )) {
+        newScore.value = parseInt(event.key, 10) * 10;
+    }
+}
+
 const randomUntaggedRefreshable = useRefreshable(getNextUntagged);
 const randomUntagged = computed(randomUntaggedRefreshable.getter);
+
+watch(() => props.categoryFilter, () => {
+    randomUntaggedRefreshable.refresh();
+});
 </script>
 
 <template>
-    <div id="todo-wrapper">
+    <div id="todo-wrapper" v-on:keyup="handleKeyPress" tabindex="0">
+        <v-select v-model="categoryFilter"
+        :options="props.gf.uniqueTagNames()"
+        placeholder="Filter by category" class="inline-block"/>
         <div v-if="!randomUntagged">All fonts are tagged!</div>
 
         <div v-else>
@@ -110,24 +146,25 @@ const randomUntagged = computed(randomUntaggedRefreshable.getter);
                 <div class="progress" :style="{ width: completeness + '%' }">
                 </div>
                 <div class="progress-text">
-                    Tagging is {{ completeness.toFixed(3) }}% complete...
+                    Tagging is {{ completeness.toFixed(3) }}% complete<span v-if="props.categoryFilter"> in {{ props.categoryFilter }}</span>
                 </div>
             </div>
 
             <h1>Is
                 <span class="family" :style="{ fontFamily: randomUntagged.font.name }">{{ randomUntagged.font.name
                 }}</span>
-                a {{ randomUntagged.tag.friendlyName }} font?
+                a<span v-if="randomUntagged.tag.friendlyName.match(/^[aeiou]/)">n</span> {{ randomUntagged.tag.friendlyName }} font?
 
             </h1>
             <h3 v-if="randomUntagged.tag.superShortDescription">({{ randomUntagged.tag.superShortDescription }})</h3>
 
-            <div class="sample" contenteditable="true" :style="{ fontFamily: randomUntagged.font.name }"
-                style="border: 1px solid #ccc; padding: 1em;">
-                Grumpy wizards make toxic brew for the evil Queen and Jack.
-            </div>
+            <sample-text :font="randomUntagged.font" style="border: 1px solid #ccc; padding: 1em;" />
 
             <p v-html="randomUntagged.tag.description"></p>
+
+            <h2 v-if="randomUntagged.font.isVF">This is a variable font.
+                Only tag it using this panel if its tag value does not vary across the designspace.
+            </h2>
 
             <div class="exemplars">
                 <div class="exemplars-low" v-if="randomUntagged.exemplars.low.length">
@@ -153,7 +190,7 @@ const randomUntagged = computed(randomUntaggedRefreshable.getter);
 
             <p>
             <div class="rangeslider">
-                <input type="range" v-model="newScore" min="0" max="100" step="1" style="vertical-align: middle;">
+                <input type="range" v-model="newScore" min="0" max="100" step="5" style="vertical-align: middle;">
                 <span>0</span>
                 <span>10</span>
                 <span>20</span>

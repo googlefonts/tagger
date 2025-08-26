@@ -6,6 +6,7 @@ import "vue-select/dist/vue-select.css";
 import AddTags from "./components/AddTags.vue";
 import CompactTagView from "./components/CompactTagView.vue";
 import Panel from "./components/Panel.vue";
+import SampleText from "./components/SampleText.vue";
 import TagView from "./components/TagView.vue";
 import TagsByCategories from "./components/TagsByCategories.vue";
 import TagsByFont from "./components/TagsByFont.vue";
@@ -20,6 +21,7 @@ Vue.component("tags-by-font", TagsByFont);
 Vue.component("tag-view", TagView);
 Vue.component("compact-tag-view", CompactTagView);
 Vue.component("todo", Todo);
+Vue.component("sample-text", SampleText);
 
 var app = new Vue({
   el: "#app",
