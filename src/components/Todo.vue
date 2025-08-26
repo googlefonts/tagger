@@ -132,12 +132,13 @@ const randomUntagged = computed(randomUntaggedRefreshable.getter);
             </h1>
             <h3 v-if="randomUntagged.tag.superShortDescription">({{ randomUntagged.tag.superShortDescription }})</h3>
 
-            <div class="sample" contenteditable="true" :style="{ fontFamily: randomUntagged.font.name }"
-                style="border: 1px solid #ccc; padding: 1em;">
-                Grumpy wizards make toxic brew for the evil Queen and Jack.
-            </div>
+            <sample-text :font="randomUntagged.font" style="border: 1px solid #ccc; padding: 1em;" />
 
             <p v-html="randomUntagged.tag.description"></p>
+
+            <h2 v-if="randomUntagged.font.isVF">This is a variable font.
+                Only tag it using this panel if its tag value does not vary across the designspace.
+            </h2>
 
             <div class="exemplars">
                 <div class="exemplars-low" v-if="randomUntagged.exemplars.low.length">
