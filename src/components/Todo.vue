@@ -124,6 +124,17 @@ function handleKeyPress(event: KeyboardEvent) {
     )) {
         newScore.value = parseInt(event.key, 10) * 10;
     }
+    // ` means 100
+    if (event.key === '`') {
+        newScore.value = 100;
+    }
+    // up/down increases and decreases
+    if (event.key === 'ArrowUp') {
+        newScore.value = Math.min(newScore.value + 1, 100);
+    }
+    if (event.key === 'ArrowDown') {
+        newScore.value = Math.max(newScore.value - 1, 0);
+    }
 }
 
 const randomUntaggedRefreshable = useRefreshable(getNextUntagged);
