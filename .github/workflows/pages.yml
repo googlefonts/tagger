@@ -2,6 +2,7 @@ name: Build GH Pages
 on:
   push:
     branches: [ "main" ]
+  pull_request:
   workflow_dispatch:
 
 jobs:
@@ -17,8 +18,10 @@ jobs:
         uses: actions/upload-pages-artifact@v3.0.1
         with:
           path: dist
+        if: ${{ github.ref == 'refs/heads/main' }}
   deploy:
     needs: build
+    if: ${{ github.ref == 'refs/heads/main' }}
     permissions:
       pages: write      # to deploy to Pages
       id-token: write   # to verify the deployment originates from an appropriate source
