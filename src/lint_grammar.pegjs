@@ -18,7 +18,7 @@ Value = Tag / Integer / "family" { return options.family }
 Negation = "not" _ head:Expression  { return !head }
 
 Tag
-  = "tag[\"" name:[A-Za-z/]+ "\"]" { return options.tags[name.join("")] }
+  = "tag[\"" name:[A-Za-z/ ]+ "\"]" { return options.tags[name.join("")] }
 
 Integer "integer"
   = _ [0-9]+ { return parseInt(text(), 10); }
