@@ -184,6 +184,10 @@ export class Font {
     return this.axes.length > 0;
   }
 
+  axis(tag: string): Axis | undefined {
+    return this.axes.find((axis) => axis.tag === tag);
+  }
+
   cssStyle(fontSize = 32) {
     if (!this.isVF) {
       return `font-family: '${this.name}'; font-size: ${fontSize}pt;`;
