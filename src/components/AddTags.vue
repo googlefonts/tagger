@@ -15,7 +15,7 @@ export type FilterSet = {
     categories: string[];
 };
 import { Font, GF } from "../models";
-import { computed, defineProps, ref, defineEmits } from 'vue';
+import { computed, ref } from 'vue';
 
 
 const props = defineProps({
