@@ -111,7 +111,7 @@ export class StaticTagging {
   toCSV(): string {
     return `${this.font.name},,${this.tag.name},${this.score}\n`;
   }
-};
+}
 
 // A tagging which has different scores for different locations in the designspace
 export class VariableTagging {
@@ -154,7 +154,10 @@ export class VariableTagging {
   toCSV(): string {
     let csv = "";
     for (let scoreEntry of this.scores) {
-      let gfStyleLocation = Object.keys(scoreEntry.location).join(",") + "@" + Object.values(scoreEntry.location).join(",");
+      let gfStyleLocation =
+        Object.keys(scoreEntry.location).join(",") +
+        "@" +
+        Object.values(scoreEntry.location).join(",");
       csv += `${this.font.name},"${gfStyleLocation}",${this.tag.name},${scoreEntry.score}\n`;
     }
     return csv;
@@ -273,7 +276,7 @@ export class GF {
     this.lintRules = [];
     this.linter = linter;
     this.loadedFamilies = [];
-    this.commit = "refs/heads/main"
+    this.commit = "refs/heads/main";
   }
   async getFamilyData() {
     let data = await loadText("family_data.json");
@@ -429,24 +432,34 @@ export class GF {
           // console.warn("Family not found (loading tags):", familyName);
           continue;
         }
-        family.taggings.push(new StaticTagging(family, this.tags[tagName], score));
+        family.taggings.push(
+          new StaticTagging(family, this.tags[tagName], score)
+        );
       }
     });
   }
 
   exportTaggings() {
     let csv = "";
-    for (let family of this.families.sort((a, b) => a.name.localeCompare(b.name))) {
-      for (let tagging of family.taggings.sort((a, b) => a.tag.name.localeCompare(b.tag.name))) {
+    for (let family of this.families.sort((a, b) =>
+      a.name.localeCompare(b.name)
+    )) {
+      for (let tagging of family.taggings.sort((a, b) =>
+        a.tag.name.localeCompare(b.tag.name)
+      )) {
         csv += tagging.toCSV();
       }
     }
     // Yeah, I guess this is neater than fiddling with octokit
     navigator.clipboard.writeText(csv);
     if (this.commit !== "refs/heads/main") {
-          window.open(`https://github.com/google/fonts/edit/${this.commit}/tags/all/families.csv`);
-        } else {
-          window.open("https://github.com/google/fonts/edit/main/tags/all/families.csv")
-        }
+      window.open(
+        `https://github.com/google/fonts/edit/${this.commit}/tags/all/families.csv`
+      );
+    } else {
+      window.open(
+        "https://github.com/google/fonts/edit/main/tags/all/families.csv"
+      );
+    }
   }
 }
