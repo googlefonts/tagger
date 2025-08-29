@@ -16,18 +16,17 @@ const props = defineProps({
   gf: {
     type: GF,
     required: true
+  },
+  showUndefined: {
+    type: Boolean,
+    default: false
   }
 });
 
-// This is different to a VariableTagging, in that we're going to turn a bunch of these
-// into a VariableTagging later using radial basis multiplication.
-type VfTagScore = Record<string, { value: number; score: number; }[]>;
 
 const newTag = ref<string | null>(null);
 const newTagScore = ref<number | null>(null);
 const newTagType = ref<'global' | 'variable'>('global');
-const newVfTagScoreAxis = ref<string | null>(null);
-const newVfTagScores = ref<VfTagScore>({});
 const fontSize = ref(32);
 
 // Props just gets us started, Vue gets mad at us if we change it during the
@@ -122,6 +121,12 @@ onBeforeUpdate(() => {
   });
 });
 
+const unappliedTaggings = computed(() => {
+  if (!selectedFamily.value) return [];
+  let unappliedTags = props.gf?.uniqueTagNames().filter(tagName => !selectedFamily.value!.hasTagging(tagName)) || [];
+  return unappliedTags.map(tagName => new StaticTagging(selectedFamily.value!, props.gf.tags[tagName], 0));
+});
+
 </script>
 <template>
   <div>
@@ -131,7 +136,7 @@ onBeforeUpdate(() => {
       <label>Font size:</label>
       <input type="range" v-model="fontSize" min="8" max="100" default="32" /> {{ fontSize }}pt
     </div>
-    <sample-text :font="selectedFamily" :fontSize="fontSize"/>
+    <sample-text :font="selectedFamily" :fontSize="fontSize" />
     <ul>
       <li v-for="tagging in selectedFamily?.taggings" :key="tagging.tag.name + selectedFamily?.name">
         <span class="tag-name">{{ tagging.tag.name }}
@@ -150,10 +155,14 @@ onBeforeUpdate(() => {
         <button @click="removeTagging(tagging)">Remove</button>
       </li>
     </ul>
+    <ul v-if="showUndefined">
+      <li v-for="tagging in unappliedTaggings" :key="tagging.tag.name + selectedFamily?.name">
+        <span class="tag-name unapplied">{{ tagging.tag.name }}</span>
+      </li>
+    </ul>
     <!-- add another -->
-    <div>
+    <div v-if="!showUndefined">
       Add
-
       <select v-model="newTagType" class="inline-block" v-if="selectedFamily?.isVF">
         <option value="global">global</option>
         <option value="variable">variable</option>
