@@ -17,7 +17,7 @@ export type { LintRule, LintWarning };
 export function linter(rules: LintRule[], font: Font): LintWarning[] {
   const tagDict: Record<string, number> = font.taggings.reduce(
     (acc, tagging) => {
-      if ("score" in tagging) {
+      if ("score" in tagging && tagging.score !== null) {
         // Only handle static taggings for now
         acc[tagging.tag.name] = tagging.score;
       }
@@ -36,7 +36,7 @@ export function linter(rules: LintRule[], font: Font): LintWarning[] {
         });
       }
     } catch (error) {
-      console.error("Error parsing rule:", rule.rule, error);
+      // console.error("Error parsing rule:", rule.rule, error);
       errors.push({
         description: "Rule could not be parsed: " + rule.rule,
         severity: "ERROR",

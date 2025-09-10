@@ -70,6 +70,9 @@ export class Tag {
         // Variable tagging, we can skip it for now
         continue;
       }
+      if (!tagging.score) {
+        continue;
+      }
       if (tagging.score > 80) {
         exemplars.high.push(tagging);
       } else if (tagging.score <= 20) {
@@ -83,9 +86,11 @@ export class Tag {
       }
     }
     // Choose top three high
+    // @ts-ignore // We know scores are not null here, we filtered them out
     exemplars.high.sort((a, b) => b.score - a.score);
     exemplars.high = exemplars.high.slice(0, 3);
     // Choose lowest three low
+    // @ts-ignore
     exemplars.low.sort((a, b) => a.score - b.score);
     exemplars.low = exemplars.low.slice(0, 3);
     console.log(`Exemplars for ${this.name}:`, exemplars);

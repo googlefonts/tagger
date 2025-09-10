@@ -25,7 +25,7 @@ const filteredTaggings: ComputedRef<Tagging[]> = computed(() => {
     selectedCategories.value.includes(tagging.tag.name)
   ) || [];
   if (sortBy.value === 'score') {
-    filtered = filtered.sort((a, b) => b.score - a.score);
+    filtered = filtered.sort((a, b) => (b.score || 0) - (a.score || 0));
   }
   if (sortBy.value === 'family') {
     filtered = filtered.sort((a, b) => {
