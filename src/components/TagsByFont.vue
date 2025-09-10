@@ -85,8 +85,12 @@ onBeforeUpdate(() => {
 const unappliedTaggings = computed(() => {
   if (!selectedFamily.value) return [];
   let unappliedTags = props.gf?.uniqueTagNames().filter(tagName => !selectedFamily.value!.hasTagging(tagName)) || [];
-  return unappliedTags.map(tagName => new StaticTagging(selectedFamily.value!, props.gf.tags[tagName], 0));
+  return unappliedTags.map(tagName => new StaticTagging(selectedFamily.value!, props.gf.tags[tagName], null));
 });
+
+const addToFamily = (tagging: Tagging) => {
+  selectedFamily.value?.addTagging(tagging);
+};
 
 </script>
 <template>
@@ -119,6 +123,10 @@ const unappliedTaggings = computed(() => {
     <ul v-if="showUndefined">
       <li v-for="tagging in unappliedTaggings" :key="tagging.tag.name + selectedFamily?.name">
         <span class="tag-name unapplied">{{ tagging.tag.name }}</span>
+        <span class="tag-score">
+          <input type="number" v-model.lazy="tagging.score" style="width: 60px;" min="0" max="100" step="10"
+            v-on:change="addToFamily(tagging)" placeholder="Score" />
+        </span>
       </li>
     </ul>
     <!-- add another -->

@@ -102,13 +102,16 @@ export class StaticTagging {
   // and know which family they belong to.
   font: Font;
   tag: Tag;
-  score: number;
-  constructor(font: Font, tag: Tag, score: number) {
+  score: number | null;
+  constructor(font: Font, tag: Tag, score: number | null) {
     this.font = font;
     this.tag = tag;
     this.score = score;
   }
   toCSV(): string {
+    if (this.score === null) {
+      return "";
+    }
     return `${this.font.name},,${this.tag.name},${this.score}\n`;
   }
 }
