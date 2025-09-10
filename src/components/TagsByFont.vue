@@ -1,5 +1,6 @@
 <script lang="ts">
-import type { Tagging } from '@/models';
+import { VariableTagging } from '@/models';
+import type { Tagging, Location } from '@/models';
 </script>
 
 <script setup lang="ts">
@@ -92,6 +93,19 @@ const addToFamily = (tagging: Tagging) => {
   selectedFamily.value?.addTagging(tagging);
 };
 
+const convertToVariable = (tagging: Tagging) => {
+  if (!selectedFamily.value?.isVF) return;
+  let extremePositions: { location: Location, score: number }[] = [];
+  for (let axis of selectedFamily.value.axes) {
+    extremePositions.push({ location: { [axis.tag]: axis.min }, score: tagging.score || 0 });
+    extremePositions.push({ location: { [axis.tag]: axis.max }, score: tagging.score || 0 });
+  }
+  const newTagging: VariableTagging = new VariableTagging(selectedFamily.value, tagging.tag, extremePositions);
+  // Copy over the score as the default value
+  selectedFamily.value.removeTagging(tagging);
+  selectedFamily.value.addTagging(newTagging);
+};
+
 </script>
 <template>
   <div>
@@ -117,7 +131,9 @@ const addToFamily = (tagging: Tagging) => {
         </span>
         <input type="number" v-model="tagging.score" v-if="!('scores' in tagging)"
           @change="EventBus.$emit('update:tags', selectedFamily?.taggings)" />
-        <button @click="removeTagging(tagging)">Remove</button>
+        <button @click="removeTagging(tagging)">x</button>
+        <button @click="convertToVariable(tagging)"
+          v-if="selectedFamily?.isVF && !('scores' in tagging)">Variate</button>
       </li>
     </ul>
     <ul v-if="showUndefined">
