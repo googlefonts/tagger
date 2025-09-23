@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ComputedRef } from 'vue';
 import { computed, ref, defineProps } from 'vue';
-import { GF } from '../models';
+import { GF, StaticTagging } from '../models';
 import type { Tagging } from '../models';
 
 const props = defineProps({
@@ -12,6 +12,10 @@ const props = defineProps({
   categories: {
     type: Array as () => string[],
     required: true
+  },
+  showUndefined: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -20,10 +24,25 @@ const sortBy = ref('family'); // Default sorting option
 const tagFilter = ref('');
 const reverseTags = ref(false);
 
+const unappliedTaggings: ComputedRef<Tagging[]> = computed(() => {
+  if (!selectedCategories.value) return [];
+  let tags = [];
+  for (const category of selectedCategories.value) {
+    // Find fonts without this tag
+    for (const f of props.gf?.families.filter(f => !f.hasTagging(category))) {
+      tags.push(new StaticTagging(f, props.gf!.tags[category], null));
+    }
+  }
+  return tags;
+});
+
 const filteredTaggings: ComputedRef<Tagging[]> = computed(() => {
   let filtered = props.gf?.allTaggings.filter(tagging =>
     selectedCategories.value.includes(tagging.tag.name)
   ) || [];
+  if (props.showUndefined) {
+    filtered = filtered.concat(unappliedTaggings.value);
+  }
   if (sortBy.value === 'score') {
     filtered = filtered.sort((a, b) => (b.score || 0) - (a.score || 0));
   }

@@ -54,7 +54,7 @@ onMounted(() => {
     <tags-by-font v-if="panel.type === 'font'" :font="panel.font" :gf="gf"
       :showUndefined="props.showUndefined"></tags-by-font>
     <tags-by-categories v-else-if="panel.type === 'categories'" :categories="panel.categories"
-      :gf="gf"></tags-by-categories>
+      :gf="gf" :showUndefined="props.showUndefined"></tags-by-categories>
     <todo v-else-if="panel.type === 'todo'" :gf="gf"></todo>
   </div>
 </template>
