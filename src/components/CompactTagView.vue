@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { defineProps, onBeforeMount } from 'vue';
+import { onBeforeMount } from 'vue';
 import type { PropType } from 'vue';
-import { Font } from '../models';
 import type { Location, StaticTagging } from '../models';
 import { EventBus } from '@/eventbus';
 

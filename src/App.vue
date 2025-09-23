@@ -21,40 +21,7 @@ let categories: ComputedRef<string[]> = computed(() => {
   return gf.value ? gf.value.uniqueTagNames() : [];
 });
 
-function performAddTag(font: Font, tagging: Tagging) {
-  // console.log("Adding tag", tag);
-  // const family = gf.value?.families.find(f => f.name === tag.family.name);
-  // if (family) {
-  //   tag.family = family; // Ensure the family is set correctly
-  //   tags.value.items.push(tag);
-  // }
-}
 
-function performAddTags(filterSet: FilterSet) {
-  console.log("Filter set", filterSet);
-  for (let family of gf.value?.families || []) {
-    let addFamily = false;
-    for (let axis of family.axes) {
-      if (
-        filterSet.lowTag.filters.some(f => f.axis == axis.tag) &&
-        filterSet.highTag.filters.some(f => f.axis == axis.tag) &&
-        filterSet.lowTag.filters.some(f => f.value >= axis.min) &&
-        filterSet.highTag.filters.some(f => f.value <= axis.max)) { addFamily = true; }
-    }
-    if (addFamily) {
-      for (let category of filterSet.categories) {
-        // const lowTag = new Tagging(category, family, [{ tagName: "wght", value: 100 }],
-        //   filterSet.lowTag.score);
-        // const highTag = new Tagging(category, family, [{ tagName: "wght", value: 900 }],
-        //   filterSet.highTag.score);
-        // const fontTag = new FontTagGroup();
-        // fontTag.addTag(lowTag);
-        // fontTag.addTag(highTag);
-        // tagGroups.value.push(fontTag);
-      }
-    }
-  }
-}
 function addFontPanel(font: string) {
   panels.value.push({ type: 'font', font });
 }
