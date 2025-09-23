@@ -8,6 +8,7 @@ import type { FilterSet } from './components/AddTags.vue';
 import { EventBus } from './eventbus';
 
 let appLoaded = ref(false);
+let showUndefined = ref(false);
 let gf = ref<GF | null>(null);
 // @ts-ignore
 window.gf = gf; // For debugging 
@@ -136,12 +137,12 @@ onBeforeMount(async () => {
       <button @click="addCategoriesPanel(['/Expressive/Loud'])">Tags in category</button>
       <button @click="addTodoPanel()">Todo List</button>
       <button @click="gf?.exportTaggings()">Export Taggings</button>
-      <!-- <add-tags @tags-added="performAddTags" :gf="gf"></add-tags> -->
+      <input type="checkbox" v-model="showUndefined">Show undefined</input>
       <div style="display: flex; flex-direction: row; width: 100vw; min-height: 100vh;">
         <div v-for="(panel, idx) in panels" :key="idx"
           :style="{ flex: '1 1 0', minWidth: 0, borderRight: idx < panels.length - 1 ? '1px solid #eee' : 'none', height: '100vh', overflow: 'auto' }">
           <panel :panel="panel" :gf="gf" :idx="idx" @remove-panel="removePanel(idx)" @shift-left="shiftLeft(idx)"
-            @shift-right="shiftRight(idx)">
+            @shift-right="shiftRight(idx)" :showUndefined="showUndefined">
           </panel>
         </div>
       </div>

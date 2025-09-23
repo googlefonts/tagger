@@ -1,12 +1,13 @@
 <script lang="ts">
-import type { Tagging } from '@/models';
+import { VariableTagging } from '@/models';
+import type { Tagging, Location } from '@/models';
 </script>
 
 <script setup lang="ts">
 import { EventBus } from '@/eventbus';
 import { GF } from '@/models';
 import { StaticTagging } from '@/models';
-import { computed, defineProps, onBeforeMount, onBeforeUpdate, ref, triggerRef, watch } from 'vue';
+import { computed, defineProps, onBeforeMount, onBeforeUpdate, ref } from 'vue';
 
 const props = defineProps({
   font: {
@@ -16,18 +17,17 @@ const props = defineProps({
   gf: {
     type: GF,
     required: true
+  },
+  showUndefined: {
+    type: Boolean,
+    default: false
   }
 });
 
-// This is different to a VariableTagging, in that we're going to turn a bunch of these
-// into a VariableTagging later using radial basis multiplication.
-type VfTagScore = Record<string, { value: number; score: number; }[]>;
 
 const newTag = ref<string | null>(null);
 const newTagScore = ref<number | null>(null);
 const newTagType = ref<'global' | 'variable'>('global');
-const newVfTagScoreAxis = ref<string | null>(null);
-const newVfTagScores = ref<VfTagScore>({});
 const fontSize = ref(32);
 
 // Props just gets us started, Vue gets mad at us if we change it during the
@@ -66,45 +66,6 @@ function addFontPanel(font: string) {
   EventBus.$emit('add-font-panel', font);
 }
 
-function addAxis() {
-  if (!selectedFamily.value || !newVfTagScoreAxis.value) return;
-  const axis = selectedFamily.value.axes.find(a => a.tag === newVfTagScoreAxis.value);
-  if (!axis) return;
-  newVfTagScores.value[newVfTagScoreAxis.value] = [{
-    value: axis.min,
-    score: newTagScore.value || 0
-  }, {
-    value: axis.max,
-    score: newTagScore.value || 100
-  }];
-  console.log(newVfTagScores.value);
-  triggerRef(newVfTagScores); // Shouldn't be necessary. But it is.
-}
-watch([font, newTag], ([newFont, newTagName]) => {
-  // Reset newTagScore when font or tag changes
-  newTagScore.value = null;
-  newVfTagScores.value = {};
-});
-
-function addGlobalTag() {
-  if (!selectedFamily.value || !newTag.value || newTagScore.value === null) return;
-  const tag = props.gf.tags[newTag.value];
-  if (!tag) {
-    console.error("Tag not found:", newTag.value);
-    return;
-  }
-  selectedFamily.value.taggings.push(new StaticTagging(selectedFamily.value, tag, newTagScore.value));
-}
-
-function addVariableTag() {
-  if (!selectedFamily.value || !newTag.value || newVfTagScores.value === null) return;
-  const tag = props.gf.tags[newTag.value];
-  if (!tag) {
-    console.error("Tag not found:", newTag.value);
-    return;
-  }
-  // XXX Do something clever with newVfTagScores to turn it into a bunch of VariableTaggings
-}
 
 onBeforeMount(() => {
   // Ensure the font is included in the CSS
@@ -122,6 +83,29 @@ onBeforeUpdate(() => {
   });
 });
 
+const unappliedTaggings = computed(() => {
+  if (!selectedFamily.value) return [];
+  let unappliedTags = props.gf?.uniqueTagNames().filter(tagName => !selectedFamily.value!.hasTagging(tagName)) || [];
+  return unappliedTags.map(tagName => new StaticTagging(selectedFamily.value!, props.gf.tags[tagName], null));
+});
+
+const addToFamily = (tagging: Tagging) => {
+  selectedFamily.value?.addTagging(tagging);
+};
+
+const convertToVariable = (tagging: Tagging) => {
+  if (!selectedFamily.value?.isVF) return;
+  let extremePositions: { location: Location, score: number }[] = [];
+  for (let axis of selectedFamily.value.axes) {
+    extremePositions.push({ location: { [axis.tag]: axis.min }, score: tagging.score || 0 });
+    extremePositions.push({ location: { [axis.tag]: axis.max }, score: tagging.score || 0 });
+  }
+  const newTagging: VariableTagging = new VariableTagging(selectedFamily.value, tagging.tag, extremePositions);
+  // Copy over the score as the default value
+  selectedFamily.value.removeTagging(tagging);
+  selectedFamily.value.addTagging(newTagging);
+};
+
 </script>
 <template>
   <div>
@@ -131,7 +115,7 @@ onBeforeUpdate(() => {
       <label>Font size:</label>
       <input type="range" v-model="fontSize" min="8" max="100" default="32" /> {{ fontSize }}pt
     </div>
-    <sample-text :font="selectedFamily" :fontSize="fontSize"/>
+    <sample-text :font="selectedFamily" :fontSize="fontSize" />
     <ul>
       <li v-for="tagging in selectedFamily?.taggings" :key="tagging.tag.name + selectedFamily?.name">
         <span class="tag-name">{{ tagging.tag.name }}
@@ -147,13 +131,23 @@ onBeforeUpdate(() => {
         </span>
         <input type="number" v-model="tagging.score" v-if="!('scores' in tagging)"
           @change="EventBus.$emit('update:tags', selectedFamily?.taggings)" />
-        <button @click="removeTagging(tagging)">Remove</button>
+        <button @click="removeTagging(tagging)">x</button>
+        <button @click="convertToVariable(tagging)"
+          v-if="selectedFamily?.isVF && !('scores' in tagging)">Variate</button>
+      </li>
+    </ul>
+    <ul v-if="showUndefined">
+      <li v-for="tagging in unappliedTaggings" :key="tagging.tag.name + selectedFamily?.name">
+        <span class="tag-name unapplied">{{ tagging.tag.name }}</span>
+        <span class="tag-score">
+          <input type="number" v-model.lazy="tagging.score" style="width: 60px;" min="0" max="100" step="10"
+            v-on:change="addToFamily(tagging)" placeholder="Score" />
+        </span>
       </li>
     </ul>
     <!-- add another -->
-    <div>
+    <div v-if="!showUndefined">
       Add
-
       <select v-model="newTagType" class="inline-block" v-if="selectedFamily?.isVF">
         <option value="global">global</option>
         <option value="variable">variable</option>
@@ -167,34 +161,11 @@ onBeforeUpdate(() => {
         </template></v-select>
       <!-- a global tag-->
       <div v-if="newTag && newTagType === 'global'">
-        &nbsp;
-        <input type="number" v-model="newTagScore" placeholder="Score (0-100)" />
-        <button @click="addGlobalTag()">Add tag</button>
+        <add-static-tag :font="selectedFamily" :gf="props.gf" :new-tag="newTag" />
       </div>
 
       <div v-if="newTag && selectedFamily?.isVF && newTagType === 'variable'" class="vf-tag">
-        <!-- a variable tag -->
-
-        <div v-for="(scores, axis) of newVfTagScores" :key="axis" class="vf-tag-axis">
-
-          <span>{{ axis }}:</span>
-          <div v-for="(score, idx) in scores" :key="idx">
-            {{ axis }}=<input type="number" v-model.number="score.value" placeholder="Value" /> &nbsp;
-            value=<input type="number" v-model.number="score.score" placeholder="Score (0-100)" />
-            <button v-if="idx > 1" @click="scores.splice(idx, 1)">Remove</button>
-          </div>
-          <button @click="newVfTagScores[axis].push({ value: 0, score: 0 });">+</button>
-        </div>
-        <select v-model="newVfTagScoreAxis" class="inline-block">
-          <option v-for="axis in selectedFamily?.axes.filter(axis => !(axis.tag in newVfTagScores))" :key="axis.tag"
-            :value="axis.tag">{{ axis.tag }}</option>
-        </select>
-        <button @click="addAxis()">Add axis</button>
-
-        <!-- at least two value/score pairs-->
-
-
-        <button @click="addVariableTag()">Add Variable Tag</button>
+        <add-variable-tag :font="selectedFamily" :gf="props.gf" :new-tag="newTag" />
       </div>
     </div>
 

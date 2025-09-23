@@ -16,7 +16,7 @@ export type Panel = FontPanel | CategoriesPanel | TodoPanel; // Union type for p
 
 <script setup lang="ts">
 import type { GF } from "../models";
-import { defineProps, defineEmits, onMounted } from "vue";
+import { onMounted } from "vue";
 import { delegate } from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/material.css';
@@ -24,6 +24,7 @@ import 'tippy.js/themes/material.css';
 const props = defineProps<{
   panel: Panel,
   gf: GF,
+  showUndefined: boolean,
 }>();
 const emit = defineEmits(["remove-panel", "shift-left", "shift-right"]);
 
@@ -50,7 +51,8 @@ onMounted(() => {
     <button @click="emit('remove-panel')" style="float:right">✕</button>
     <button @click="emit('shift-left')" style="float:right">←</button>
     <button @click="emit('shift-right')" style="float:right">→</button>
-    <tags-by-font v-if="panel.type === 'font'" :font="panel.font" :gf="gf"></tags-by-font>
+    <tags-by-font v-if="panel.type === 'font'" :font="panel.font" :gf="gf"
+      :showUndefined="props.showUndefined"></tags-by-font>
     <tags-by-categories v-else-if="panel.type === 'categories'" :categories="panel.categories"
       :gf="gf"></tags-by-categories>
     <todo v-else-if="panel.type === 'todo'" :gf="gf"></todo>

@@ -70,6 +70,9 @@ export class Tag {
         // Variable tagging, we can skip it for now
         continue;
       }
+      if (!tagging.score) {
+        continue;
+      }
       if (tagging.score > 80) {
         exemplars.high.push(tagging);
       } else if (tagging.score <= 20) {
@@ -83,9 +86,11 @@ export class Tag {
       }
     }
     // Choose top three high
+    // @ts-ignore // We know scores are not null here, we filtered them out
     exemplars.high.sort((a, b) => b.score - a.score);
     exemplars.high = exemplars.high.slice(0, 3);
     // Choose lowest three low
+    // @ts-ignore
     exemplars.low.sort((a, b) => a.score - b.score);
     exemplars.low = exemplars.low.slice(0, 3);
     console.log(`Exemplars for ${this.name}:`, exemplars);
@@ -102,16 +107,19 @@ export class StaticTagging {
   // and know which family they belong to.
   font: Font;
   tag: Tag;
-  score: number;
-  constructor(font: Font, tag: Tag, score: number) {
+  score: number | null;
+  constructor(font: Font, tag: Tag, score: number | null) {
     this.font = font;
     this.tag = tag;
     this.score = score;
   }
   toCSV(): string {
+    if (this.score === null) {
+      return "";
+    }
     return `${this.font.name},,${this.tag.name},${this.score}\n`;
   }
-};
+}
 
 // A tagging which has different scores for different locations in the designspace
 export class VariableTagging {
@@ -154,7 +162,10 @@ export class VariableTagging {
   toCSV(): string {
     let csv = "";
     for (let scoreEntry of this.scores) {
-      let gfStyleLocation = Object.keys(scoreEntry.location).join(",") + "@" + Object.values(scoreEntry.location).join(",");
+      let gfStyleLocation =
+        Object.keys(scoreEntry.location).join(",") +
+        "@" +
+        Object.values(scoreEntry.location).join(",");
       csv += `${this.font.name},"${gfStyleLocation}",${this.tag.name},${scoreEntry.score}\n`;
     }
     return csv;
@@ -182,6 +193,10 @@ export class Font {
 
   get isVF() {
     return this.axes.length > 0;
+  }
+
+  axis(tag: string): Axis | undefined {
+    return this.axes.find((axis) => axis.tag === tag);
   }
 
   cssStyle(fontSize = 32) {
@@ -269,7 +284,7 @@ export class GF {
     this.lintRules = [];
     this.linter = linter;
     this.loadedFamilies = [];
-    this.commit = "refs/heads/main"
+    this.commit = "refs/heads/main";
   }
   async getFamilyData() {
     let data = await loadText("family_data.json");
@@ -289,6 +304,9 @@ export class GF {
     let csvData = parseCSV(data, "rule", "severity", "description");
 
     for (let item of csvData) {
+      if (!item.rule || !item.severity || !item.description) {
+        continue;
+      }
       this.lintRules.push({
         rule: item.rule.trim(),
         description: item.description.trim(),
@@ -422,24 +440,34 @@ export class GF {
           // console.warn("Family not found (loading tags):", familyName);
           continue;
         }
-        family.taggings.push(new StaticTagging(family, this.tags[tagName], score));
+        family.taggings.push(
+          new StaticTagging(family, this.tags[tagName], score)
+        );
       }
     });
   }
 
   exportTaggings() {
     let csv = "";
-    for (let family of this.families.sort((a, b) => a.name.localeCompare(b.name))) {
-      for (let tagging of family.taggings.sort((a, b) => a.tag.name.localeCompare(b.tag.name))) {
+    for (let family of this.families.sort((a, b) =>
+      a.name.localeCompare(b.name)
+    )) {
+      for (let tagging of family.taggings.sort((a, b) =>
+        a.tag.name.localeCompare(b.tag.name)
+      )) {
         csv += tagging.toCSV();
       }
     }
     // Yeah, I guess this is neater than fiddling with octokit
     navigator.clipboard.writeText(csv);
     if (this.commit !== "refs/heads/main") {
-          window.open(`https://github.com/google/fonts/edit/${this.commit}/tags/all/families.csv`);
-        } else {
-          window.open("https://github.com/google/fonts/edit/main/tags/all/families.csv")
-        }
+      window.open(
+        `https://github.com/google/fonts/edit/${this.commit}/tags/all/families.csv`
+      );
+    } else {
+      window.open(
+        "https://github.com/google/fonts/edit/main/tags/all/families.csv"
+      );
+    }
   }
 }
