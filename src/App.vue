@@ -103,8 +103,8 @@ onBeforeMount(async () => {
       <button @click="addFontPanel('Maven Pro')">Tags in font</button>
       <button @click="addCategoriesPanel(['/Expressive/Loud'])">Tags in category</button>
       <button @click="addTodoPanel()">Todo List</button>
-      <button @click="gf?.exportTaggings()">Export Taggings</button>
-      <input type="checkbox" v-model="showUndefined">Show undefined</input>
+      <button @click="gf?.exportTaggings()">Save changes</button>
+      <input type="checkbox" v-model="showUndefined">Show all</input>
       <div style="display: flex; flex-direction: row; width: 100vw; min-height: 100vh;">
         <div v-for="(panel, idx) in panels" :key="idx"
           :style="{ flex: '1 1 0', minWidth: 0, borderRight: idx < panels.length - 1 ? '1px solid #eee' : 'none', height: '100vh', overflow: 'auto' }">
