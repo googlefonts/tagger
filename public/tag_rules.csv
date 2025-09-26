@@ -383,4 +383,29 @@ tag["/Expressive/Sophisticated"] > 0 and tag["/Expressive/Fancy"] > 0,INFO,"Soph
 tag["/Expressive/Sophisticated"] > 0 and tag["/Expressive/Vintage"] > 0,INFO,"Sophisticated and Vintage (check overlap)?"
 tag["/Expressive/Sophisticated"] > 0 and tag["/Expressive/Competent"] > 0,INFO,"Sophisticated and Competent (check overlap)?"
 
-# 🏷️ 
+
+# 🏷️ Stiff
+
+tag["/Expressive/Stiff"] > 0 and tag["/Expressive/Playful"] > 0,WARN,"Stiff but Playful?"
+tag["/Expressive/Stiff"] > 0 and tag["/Expressive/Childlike"] > 0,WARN,"Stiff but Childlike?"
+tag["/Expressive/Stiff"] > 0 and tag["/Expressive/Cute"] > 0,WARN,"Stiff but Cute?"
+tag["/Expressive/Stiff"] > 0 and tag["/Expressive/Excited"] > 0,WARN,"Stiff but Excited?"
+tag["/Expressive/Stiff"] > 0 and tag["/Expressive/Artistic"] > 0,WARN,"Stiff but Artistic?"
+tag["/Expressive/Stiff"] > 0 and tag["/Expressive/Fancy"] > 0,WARN,"Stiff but Fancy?"
+tag["/Expressive/Stiff"] > 0 and tag["/Theme/Blobby"] > 0,WARN,"Stiff but Blobby?"
+tag["/Expressive/Stiff"] > 0 and tag["/Theme/Wacky"] > 0,WARN,"Stiff but Wacky?"
+tag["/Expressive/Stiff"] > 0 and tag["/Script/Formal"] > 0,WARN,"Stiff but Calligraphic?"
+
+tag["/Expressive/Stiff"] == 0 and tag["/quant/stroke_width_max"] - tag["/quant/stroke_width_min"] > 100,INFO,"High stroke contrast but not Stiff?"
+tag["/Expressive/Stiff"] == 0 and tag["/Serif/Fat Face"] > 0,INFO,"Bold serif but not Stiff?"
+tag["/Expressive/Stiff"] == 0 and tag["/Slab/Geometric"] > 0,INFO,"Slab geometric but not Stiff?"
+tag["/Expressive/Stiff"] == 0 and tag["/Sans/Neo Grotesque"] > 0,INFO,"Neo Grotesque sans but not Stiff?"
+tag["/Expressive/Stiff"] == 0 and tag["/quant/stroke_width_min"] > 0 and tag["/quant/stroke_width_max"]/tag["/quant/stroke_width_min"] > 2,INFO,"High weight ratio but not Stiff?"
+
+tag["/Expressive/Stiff"] == 0 and tag["/quant/stroke_width_max"] > 150,INFO,"Thick strokes but not Stiff?"
+tag["/Expressive/Stiff"] == 0 and tag["/Serif/Modern"] > 0,INFO,"Modern serif precision but not Stiff?"
+tag["/Expressive/Stiff"] == 0 and tag["/Slab/Humanist"] > 0,INFO,"Slab humanist but not Stiff?"
+
+tag["/Expressive/Stiff"] > 0 and tag["/Expressive/Rugged"] > 0,INFO,"Stiff and Rugged (check overlap)?"
+tag["/Expressive/Stiff"] > 0 and tag["/Expressive/Loud"] > 0,INFO,"Stiff and Loud (check overlap)?"
+tag["/Expressive/Stiff"] > 0 and tag["/Expressive/Competent"] > 0,INFO,"Stiff and Competent (check overlap)?"
