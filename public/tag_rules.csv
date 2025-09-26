@@ -409,3 +409,25 @@ tag["/Expressive/Stiff"] == 0 and tag["/Slab/Humanist"] > 0,INFO,"Slab humanist 
 tag["/Expressive/Stiff"] > 0 and tag["/Expressive/Rugged"] > 0,INFO,"Stiff and Rugged (check overlap)?"
 tag["/Expressive/Stiff"] > 0 and tag["/Expressive/Loud"] > 0,INFO,"Stiff and Loud (check overlap)?"
 tag["/Expressive/Stiff"] > 0 and tag["/Expressive/Competent"] > 0,INFO,"Stiff and Competent (check overlap)?"
+
+
+# 🏷️ Vintage
+
+tag["/Expressive/Vintage"] > 0 and tag["/Expressive/Modern"] > 0,WARN,"Vintage but Modern?"
+tag["/Expressive/Vintage"] > 0 and tag["/Expressive/Futuristic"] > 0,WARN,"Vintage but Futuristic?"
+tag["/Expressive/Vintage"] > 0 and tag["/Expressive/Playful"] > 0,WARN,"Vintage but Playful?"
+tag["/Expressive/Vintage"] > 0 and tag["/Expressive/Childlike"] > 0,WARN,"Vintage but Childlike?"
+tag["/Expressive/Vintage"] > 0 and tag["/Theme/Wacky"] > 0,WARN,"Vintage but Wacky?"
+tag["/Expressive/Vintage"] > 0 and tag["/Theme/Blobby"] > 0,WARN,"Vintage but Blobby?"
+tag["/Expressive/Vintage"] > 0 and tag["/Expressive/Cute"] > 0,WARN,"Vintage but Cute?"
+
+tag["/Expressive/Vintage"] == 0 and tag["/Serif/Old Style Garalde"] > 0,INFO,"Old Style serif present but not Vintage?"
+tag["/Expressive/Vintage"] == 0 and tag["/Serif/Transitional"] > 0,INFO,"Transitional serif present but not Vintage?"
+tag["/Expressive/Vintage"] == 0 and tag["/Sans/Neo Grotesque"] > 0,INFO,"Neo Grotesque sans present but not Vintage?"
+tag["/Expressive/Vintage"] == 0 and tag["/Monospace/Monospace"] > 0,INFO,"Typewriter-style font present but not Vintage?"
+tag["/Expressive/Vintage"] == 0 and tag["/Theme/Art Deco"] > 0,INFO,"Art Deco theme present but not Vintage?"
+tag["/Expressive/Vintage"] == 0 and tag["/Theme/Art Nouveau"] > 0,INFO,"Art Nouveau theme present but not Vintage?"
+tag["/Expressive/Vintage"] == 0 and tag["/Theme/Bauhaus"] > 0,INFO,"Bauhaus-inspired design present but not Vintage?"
+
+tag["/Expressive/Vintage"] == 0 and tag["/Script/Formal"] > 0,INFO,"Calligraphic cursive present but not Vintage?"
+
