@@ -338,3 +338,49 @@ tag["/Expressive/Rugged"] > 0 and tag["/Expressive/Calm"] > 0,WARN,"Rugged and C
 tag["/Expressive/Rugged"] > 0 and tag["/Expressive/Fancy"] > 0,WARN,"Rugged and Fancy?"
 tag["/Expressive/Rugged"] > 0 and tag["/Expressive/Sincere"] > 0,INFO,"Rugged and Sincere (check intent)?"
 
+
+# 🏷️ Sincere
+
+tag["/Expressive/Sincere"] > 0 and tag["/Expressive/Fancy"] > 0,WARN,"Sincere but Fancy?"
+tag["/Expressive/Sincere"] > 0 and tag["/Expressive/Futuristic"] > 0,WARN,"Sincere but Futuristic?"
+tag["/Expressive/Sincere"] > 0 and tag["/Expressive/Loud"] > 0,WARN,"Sincere but Loud?"
+tag["/Expressive/Sincere"] > 0 and tag["/Expressive/Playful"] > 0,WARN,"Sincere but Playful?"
+tag["/Expressive/Sincere"] > 0 and tag["/Expressive/Rugged"] > 0,INFO,"Sincere and Rugged (check intent)?"
+tag["/Expressive/Sincere"] > 0 and tag["/Expressive/Happy"] > 0,INFO,"Sincere and Happy (check intent)?"
+
+tag["/Expressive/Sincere"] == 0 and tag["/Sans/Geometric"] > 0,INFO,"Geometric Sans (Poppins/Readex) but not Sincere?"
+tag["/Expressive/Sincere"] == 0 and tag["/Sans/Humanist"] > 0,INFO,"Humanist Sans legibility but not Sincere?"
+tag["/Expressive/Sincere"] == 0 and tag["/Purpose/Easy Reading"] > 0,INFO,"Accessibility-driven design (Lexend, Hyperlegible) but not Sincere?"
+
+tag["/Expressive/Sincere"] == 0 and tag["/Script/Formal"] > 0,INFO,"Readable formal calligraphy but not Sincere?"
+tag["/Expressive/Sincere"] == 0 and tag["/Script/Handwritten"] > 0,INFO,"Regular cursive handwriting but not Sincere?"
+tag["/Expressive/Sincere"] > 0 and tag["/Theme/Art Nouveau"] > 0,WARN,"Sincere but Decorative Art Nouveau?"
+
+# 🏷️ Sophisticated
+
+tag["/Expressive/Sophisticated"] > 0 and tag["/Expressive/Cute"] > 0,WARN,"Sophisticated but Cute?"
+tag["/Expressive/Sophisticated"] > 0 and tag["/Expressive/Childlike"] > 0,WARN,"Sophisticated but Childlike?"
+tag["/Expressive/Sophisticated"] > 0 and tag["/Expressive/Excited"] > 0,WARN,"Sophisticated but Excited?"
+tag["/Expressive/Sophisticated"] > 0 and tag["/Expressive/Playful"] > 0,WARN,"Sophisticated but Playful?"
+tag["/Expressive/Sophisticated"] > 0 and tag["/Expressive/Rugged"] > 0,WARN,"Sophisticated but Rugged?"
+tag["/Expressive/Sophisticated"] > 0 and tag["/Expressive/Loud"] > 0,WARN,"Sophisticated but Loud?"
+tag["/Expressive/Sophisticated"] > 0 and tag["/Expressive/Stiff"] > 0,WARN,"Sophisticated but Stiff?"
+tag["/Expressive/Sophisticated"] > 0 and tag["/Expressive/Calm"] > 0,WARN,"Sophisticated but Calm?"
+
+
+tag["/Expressive/Sophisticated"] == 0 and tag["/Serif/Old Style Garalde"] > 0,INFO,"Old Style serif but not Sophisticated?"
+tag["/Expressive/Sophisticated"] == 0 and tag["/Serif/Transitional"] > 0,INFO,"Transitional serif but not Sophisticated?"
+tag["/Expressive/Sophisticated"] == 0 and tag["/Serif/Didone"] > 0,INFO,"Didone (high contrast) but not Sophisticated?"
+tag["/Expressive/Sophisticated"] == 0 and tag["/Script/Formal"] > 0,INFO,"Formal Calligraphy but not Sophisticated?"
+
+tag["/Expressive/Sophisticated"] == 0 and tag["/quant/stroke_width_max"] - tag["/quant/stroke_width_min"] > 150,INFO,"High stroke contrast but not Sophisticated?"
+tag["/Expressive/Sophisticated"] == 0 and tag["/Serif/Modern"] > 0,INFO,"Modern serif precision but not Sophisticated?"
+
+tag["/Expressive/Sophisticated"] > 0 and tag["/Expressive/Awkward"] > 0,WARN,"Sophisticated but Awkward?"
+tag["/Expressive/Sophisticated"] > 0 and tag["/Theme/Blobby"] > 0,WARN,"Sophisticated but Blobby?"
+tag["/Expressive/Sophisticated"] > 0 and tag["/Theme/Wacky"] > 0,WARN,"Sophisticated but Wacky?"
+tag["/Expressive/Sophisticated"] > 0 and tag["/Expressive/Fancy"] > 0,INFO,"Sophisticated and Fancy (check distinction)?"
+tag["/Expressive/Sophisticated"] > 0 and tag["/Expressive/Vintage"] > 0,INFO,"Sophisticated and Vintage (check overlap)?"
+tag["/Expressive/Sophisticated"] > 0 and tag["/Expressive/Competent"] > 0,INFO,"Sophisticated and Competent (check overlap)?"
+
+# 🏷️ 
