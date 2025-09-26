@@ -170,12 +170,119 @@ tag["/Expressive/Excited"] > 0 and font["Contrast"] < 15,WARN,"Low contrast and 
 
 
 # 🏷️ Fancy
+
 tag["/Expressive/Fancy"] > 0 and not tag["/Expressive/Active"] > 0,INFO,"Fancy but not Active?"
+tag["/Expressive/Fancy"] > 0 and tag["/Purpose/Easy Reading"] > 60,WARN,"Fancy but Easy Reading?"
+tag["/Expressive/Fancy"] > 0 and tag["/Expressive/Business"] > 0,WARN,"Fancy but Business?"
+tag["/Expressive/Fancy"] > 0 and tag["/Purpose/Learn To Write"] > 0,WARN,"Fancy but Learn To Write?"
+# tag["/Expressive/Fancy"] > 0 and tag["/Purpose/Body Text"] > 0,WARN,"Fancy but Body Text?"
+
+tag["/Expressive/Fancy"] == 0 and tag["/Expressive/Artistic"] > 70,WARN,"Artistic but not Fancy?"
+tag["/Expressive/Fancy"] == 0 and tag["/Script/Formal"] > 0,WARN,"Calligraphy but not Fancy?"
+
+tag["/Expressive/Fancy"] == 0 and tag["/Theme/Blackletter"] > 0,INFO,"Blackletter but not Fancy?"
+tag["/Expressive/Fancy"] == 0 and tag["/Theme/Art Nouveau"] > 0,INFO,"Art Nouveau but not Fancy?"
+tag["/Expressive/Fancy"] == 0 and tag["/Theme/Medieval"] > 0,INFO,"Medieval but not Fancy?"
+
+
+# 🏷️ Futuristic
+
+tag["/Expressive/Futuristic"] > 0 and tag["/Purpose/Easy Reading"] > 60,WARN,"Futuristic but Easy Reading?"
+tag["/Expressive/Futuristic"] > 0 and tag["/Purpose/Learn To Write"] > 0,WARN,"Futuristic but Learn To Write?"
+tag["/Expressive/Futuristic"] > 0 and tag["/Expressive/Business"] > 0,WARN,"Futuristic but Business?"
+tag["/Expressive/Futuristic"] > 0 and tag["/Expressive/Vintage"] > 0,WARN,"Futuristic and Vintage?"
+tag["/Expressive/Futuristic"] > 0 and tag["/Theme/Medieval"] > 0,WARN,"Futuristic and Medieval?"
+
+tag["/Expressive/Futuristic"] == 0 and tag["/Expressive/Innovative"] > 70,WARN,"Innovative but not Futuristic?"
+tag["/Expressive/Futuristic"] == 0 and tag["/Theme/Techno"] > 0,WARN,"Techno but not Futuristic?"
+tag["/Expressive/Futuristic"] == 0 and tag["/Theme/Art Deco"] > 0,WARN,"Art Deco (retro-futurism) but not Futuristic?"
+
+tag["/Expressive/Futuristic"] == 0 and tag["/Sans/Geometric"] > 0,INFO,"Geometric Sans but not Futuristic?"
+tag["/Expressive/Futuristic"] == 0 and tag["/Slab/Geometric"] > 0,INFO,"Geometric Slab but not Futuristic?"
+tag["/Expressive/Futuristic"] == 0 and tag["/Sans/Superellipse"] > 0,INFO,"Superellipse but not Futuristic?"
+tag["/Expressive/Futuristic"] == 0 and tag["/Theme/Pixel"] > 0,INFO,"Pixel (fragmented/digital) but not Futuristic?"
+tag["/Expressive/Futuristic"] == 0 and tag["/Sans/Neo Grotesque"] > 0,INFO,"Neo-grotesque monoline but not Futuristic?"
+
+tag["/Expressive/Futuristic"] > 0 and tag["/Expressive/Calm"] > 0,WARN,"Futuristic and Calm?"
+tag["/Expressive/Futuristic"] > 0 and tag["/Expressive/Sincere"] > 0,WARN,"Futuristic and Sincere?"
+tag["/Expressive/Futuristic"] > 0 and tag["/Expressive/Cute"] > 0,WARN,"Futuristic and Cute?"
+tag["/Expressive/Futuristic"] > 0 and tag["/Theme/Blobby"] > 0,WARN,"Futuristic but Blobby?"
+
+# 🏷️ Happy
+
+tag["/Expressive/Happy"] > 0 and tag["/Purpose/Easy Reading"] > 50,WARN,"Happy but Easy Reading?"
+tag["/Expressive/Happy"] > 0 and tag["/Purpose/Learn To Write"] > 0,WARN,"Happy but Learn To Write?"
+tag["/Expressive/Happy"] > 0 and tag["/Expressive/Business"] > 0,WARN,"Happy but Business?"
+tag["/Expressive/Happy"] > 0 and tag["/Script/Formal"] > 0,WARN,"Happy but Formal Calligraphy?"
+
+tag["/Expressive/Happy"] == 0 and tag["/Expressive/Cute"] > 0,WARN,"Cute but not Happy?"
+tag["/Expressive/Happy"] == 0 and tag["/Expressive/Playful"] > 0,WARN,"Playful but not Happy?"
+tag["/Expressive/Happy"] == 0 and tag["/Expressive/Excited"] > 0,WARN,"Excited but not Happy?"
+tag["/Expressive/Happy"] == 0 and tag["/Expressive/Childlike"] > 0,WARN,"Childlike but not Happy?"
+
+tag["/Expressive/Happy"] == 0 and tag["/Sans/Rounded"] > 0,INFO,"Rounded Sans but not Happy?"
+tag["/Expressive/Happy"] == 0 and tag["/Theme/Blobby"] > 0,INFO,"Blobby cheerful forms but not Happy?"
+tag["/Expressive/Happy"] == 0 and tag["/Script/Handwritten"] > 0,INFO,"Handwritten (childlike) but not Happy?"
+tag["/Expressive/Happy"] == 0 and tag["/Script/Informal"] > 0,INFO,"Informal Script but not Happy?"
+
+tag["/Expressive/Happy"] > 0 and tag["/Script/Formal"] > 0,WARN,"Happy but Calligraphic?"
+tag["/Expressive/Happy"] > 0 and tag["/Expressive/Stiff"] > 0,WARN,"Happy and Stiff?"
+tag["/Expressive/Happy"] > 0 and tag["/Expressive/Serious"] > 0,WARN,"Happy and Serious?"
+tag["/Expressive/Happy"] > 0 and tag["/Expressive/Rugged"] > 0,WARN,"Happy and Rugged?"
+
+# 🏷️ Innovative
+
+tag["/Expressive/Innovative"] > 0 and tag["/Purpose/Easy Reading"] > 30,WARN,"Innovative but Easy Reading?"
+tag["/Expressive/Innovative"] > 0 and tag["/Purpose/Body Text"] > 0,WARN,"Innovative but Body Text?"
+tag["/Expressive/Innovative"] > 0 and tag["/Expressive/Competent"] > 0,WARN,"Innovative and Competent?"
+tag["/Expressive/Innovative"] > 0 and tag["/Expressive/Sincere"] > 0,WARN,"Innovative and Sincere?"
+tag["/Expressive/Innovative"] > 0 and tag["/Expressive/Business"] > 0,WARN,"Innovative and Business?"
+tag["/Expressive/Innovative"] > 0 and tag["/Serif/Old Style Garalde"] > 0,INFO,"Innovative but Old Style Garalde?"
+tag["/Expressive/Innovative"] > 0 and tag["/Sans/Neo Grotesque"] > 0,INFO,"Innovative but Neo Grotesque?"
+tag["/Expressive/Innovative"] > 0 and tag["/Serif/Didone"] > 0,INFO,"Innovative but Didone?"
+
+tag["/Expressive/Innovative"] == 0 and tag["/Expressive/Futuristic"] > 0,INFO,"Futuristic but not Innovative?"
+tag["/Expressive/Innovative"] == 0 and tag["/Theme/Wacky"] > 0,INFO,"Wacky but not Innovative?"
+tag["/Expressive/Innovative"] == 0 and tag["/Theme/Techno"] > 0,INFO,"Techno but not Innovative?"
+tag["/Expressive/Innovative"] == 0 and tag["/Monospace/Monospace"] > 0,INFO,"Monospace but not Innovative?"
+
+tag["/Expressive/Innovative"] == 0 and tag["/Theme/Pixel"] > 0,INFO,"Pixel experimentation but not Innovative?"
+tag["/Expressive/Innovative"] == 0 and tag["/Theme/Art Nouveau"] > 0,INFO,"Unconventional historical reinterpretation but not Innovative?"
+tag["/Expressive/Innovative"] == 0 and tag["/Theme/Art Deco"] > 0,INFO,"Modern reinterpretation of Art Deco but not Innovative?"
+tag["/Expressive/Innovative"] == 0 and tag["/Theme/Stencil"] > 0,INFO,"Stencil experimental but not Innovative?"
+
+tag["/Expressive/Innovative"] > 0 and tag["/Serif/Modern"] > 0,WARN,"Innovative but Modern Serif (traditional)?"
+tag["/Expressive/Innovative"] > 0 and tag["/Sans/Humanist"] > 0,WARN,"Innovative but Humanist Sans (traditional)?"
+tag["/Expressive/Innovative"] > 0 and tag["/Slab/Clarendon"] > 0,WARN,"Innovative but Clarendon (historic revival)?"
+tag["/Expressive/Innovative"] > 0 and tag["/Expressive/Fancy"] > 0,WARN,"Innovative but Fancy ornamentation without purpose?"
 
 
 # 🏷️ Loud
 
+tag["/Expressive/Loud"] > 0 and tag["/Expressive/Calm"] > 0,WARN,"Loud and Calm?"
+tag["/Expressive/Loud"] > 0 and tag["/Expressive/Fancy"] > 0,WARN,"Loud and Fancy?"
+tag["/Expressive/Loud"] > 0 and tag["/Expressive/Business"] > 0,WARN,"Loud and Business?"
+tag["/Expressive/Loud"] > 0 and tag["/Expressive/Competent"] > 0,WARN,"Loud and Competent?"
+tag["/Expressive/Loud"] > 0 and tag["/Expressive/Cute"] > 0,WARN,"Loud and Cute?"
+
+tag["/Expressive/Loud"] == 0 and font["OS/2"]["usWeightClass"] >= 700,WARN,"Heavy weight but not Loud?"
 tag["/Expressive/Loud"] > 0 and font["OS/2"]["usWeightClass"] <= 699,WARN,"Loud but weight ≤ Bold?"
-tag["/Expressive/Loud"] == 0 and font["OS/2"]["usWeightClass"] >= 800,WARN,"Heavy but not Loud?"
+# tag["/Expressive/Loud"] == 0 and font["OS/2"]["usWeightClass"] >= 800,WARN,"Heavy but not Loud?"
+tag["/Expressive/Loud"] == 0 and tag["/Expressive/Excited"] > 0,WARN,"Excited but not Loud?"
+tag["/Expressive/Loud"] == 0 and tag["/Expressive/Playful"] > 0,INFO,"Playful but not Loud?"
+tag["/Expressive/Loud"] == 0 and tag["/Expressive/Active"] > 0,INFO,"Active but not Loud?"
+
+tag["/Expressive/Loud"] == 0 and font["/quant/stroke_width_max"] > 120,INFO,"Broad strokes but not Loud?"
+tag["/Expressive/Loud"] == 0 and tag["/Serif/Fat Face"] > 0,INFO,"Fat Face (high contrast display) but not Loud?"
+tag["/Expressive/Loud"] == 0 and tag["/Theme/Woodtype"] > 0,INFO,"Woodtype bold but not Loud?"
+
+tag["/Expressive/Loud"] > 0 and tag["/Script/Formal"] > 0,WARN,"Loud but Formal Script?"
+tag["/Expressive/Loud"] > 0 and tag["/Script/Handwritten"] > 0,WARN,"Loud but Handwritten?"
+tag["/Expressive/Loud"] > 0 and tag["/Theme/Blobby"] > 0,WARN,"Loud but Blobby (soft, curvy)?"
+tag["/Expressive/Loud"] > 0 and tag["/Expressive/Sophisticated"] > 0,WARN,"Loud but Sophisticated?"
+
+tag["/Expressive/Loud"] > 0 and tag["/Expressive/Sincere"] > 0,WARN,"Loud and Sincere?"
+tag["/Expressive/Loud"] > 0 and tag["/Expressive/Happy"] > 0,INFO,"Loud and Happy (ok but check intent)?"
+
 
 
