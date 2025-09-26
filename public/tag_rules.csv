@@ -309,3 +309,32 @@ tag["/Expressive/Playful"] > 0 and tag["/Expressive/Sophisticated"] > 0,WARN,"Pl
 tag["/Expressive/Playful"] > 0 and tag["/Expressive/Sincere"] > 0,WARN,"Playful but Sincere?"
 tag["/Expressive/Playful"] > 0 and tag["/Expressive/Fancy"] > 0,INFO,"Playful and Fancy (overlap, check intent)?"
 tag["/Expressive/Playful"] > 0 and tag["/Expressive/Excited"] > 0,INFO,"Playful and Excited (ok, but check strength)?"
+
+
+# 🏷️ Rugged
+
+tag["/Expressive/Rugged"] > 0 and tag["/Expressive/Cute"] > 0,WARN,"Rugged and Cute?"
+tag["/Expressive/Rugged"] > 0 and tag["/Expressive/Childlike"] > 0,WARN,"Rugged and Childlike?"
+tag["/Expressive/Rugged"] > 0 and tag["/Expressive/Playful"] > 0,WARN,"Rugged and Playful?"
+tag["/Expressive/Rugged"] > 0 and tag["/Script/Formal"] > 0,WARN,"Rugged but Formal Script?"
+tag["/Expressive/Rugged"] > 0 and tag["/Script/Handwritten"] > 0,WARN,"Rugged but Handwritten?"
+tag["/Expressive/Rugged"] > 0 and font["OS/2"]["usWeightClass"] < 400,WARN,"Rugged but too thin/light?"
+
+tag["/Expressive/Rugged"] == 0 and tag["/Theme/Distressed"] > 0,INFO,"Distressed texture but not Rugged?"
+tag["/Expressive/Rugged"] == 0 and tag["/Theme/Woodtype"] > 0,INFO,"Woodtype strength but not Rugged?"
+tag["/Expressive/Rugged"] == 0 and tag["/Slab/Clarendon"] > 0,INFO,"Slab Clarendon robust but not Rugged?"
+tag["/Expressive/Rugged"] == 0 and tag["/Slab/Geometric"] > 0,INFO,"Geometric Slab sturdy but not Rugged?"
+
+tag["/Expressive/Rugged"] == 0 and tag["/Theme/Stencil"] > 0,INFO,"Stencil military toughness but not Rugged?"
+tag["/Expressive/Rugged"] == 0 and tag["/Theme/Blackletter"] > 0,INFO,"Blackletter toughness but not Rugged?"
+
+tag["/Expressive/Rugged"] > 0 and tag["/Serif/Didone"] > 0,WARN,"Rugged but Didone (delicate)?"
+tag["/Expressive/Rugged"] > 0 and tag["/Serif/Modern"] > 0,WARN,"Rugged but Modern Serif?"
+tag["/Expressive/Rugged"] > 0 and tag["/Sans/Humanist"] > 0,WARN,"Rugged but Humanist Sans (too refined)?"
+tag["/Expressive/Rugged"] > 0 and tag["/Expressive/Sophisticated"] > 0,WARN,"Rugged but Sophisticated?"
+tag["/Expressive/Rugged"] > 0 and tag["/Theme/Art Nouveau"] > 0,WARN,"Rugged but Art Nouveau?"
+
+tag["/Expressive/Rugged"] > 0 and tag["/Expressive/Calm"] > 0,WARN,"Rugged and Calm?"
+tag["/Expressive/Rugged"] > 0 and tag["/Expressive/Fancy"] > 0,WARN,"Rugged and Fancy?"
+tag["/Expressive/Rugged"] > 0 and tag["/Expressive/Sincere"] > 0,INFO,"Rugged and Sincere (check intent)?"
+
