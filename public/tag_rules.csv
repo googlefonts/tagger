@@ -285,4 +285,27 @@ tag["/Expressive/Loud"] > 0 and tag["/Expressive/Sincere"] > 0,WARN,"Loud and Si
 tag["/Expressive/Loud"] > 0 and tag["/Expressive/Happy"] > 0,INFO,"Loud and Happy (ok but check intent)?"
 
 
+# 🏷️ Playful
 
+tag["/Expressive/Playful"] > 0 and tag["/Expressive/Calm"] > 0,WARN,"Playful and Calm?"
+tag["/Expressive/Playful"] > 0 and tag["/Expressive/Business"] > 0,WARN,"Playful and Business?"
+tag["/Expressive/Playful"] > 0 and tag["/Expressive/Competent"] > 0,WARN,"Playful and Competent?"
+tag["/Expressive/Playful"] > 0 and tag["/Script/Formal"] > 0,WARN,"Playful but Formal Script?"
+
+tag["/Expressive/Playful"] == 0 and tag["/Expressive/Happy"] > 0,WARN,"Happy but not Playful?"
+tag["/Expressive/Playful"] == 0 and tag["/Expressive/Cute"] > 0,INFO,"Cute but not Playful?"
+tag["/Expressive/Playful"] == 0 and tag["/Theme/Wacky"] > 0,INFO,"Wacky but not Playful?"
+tag["/Expressive/Playful"] == 0 and tag["/Theme/Blobby"] > 0,INFO,"Blobby but not Playful?"
+
+tag["/Expressive/Playful"] == 0 and tag["/Script/Handwritten"] > 0,INFO,"Handwritten irregularities but not Playful?"
+tag["/Expressive/Playful"] == 0 and tag["/Sans/Rounded"] > 0,INFO,"Rounded Sans but not Playful?"
+tag["/Expressive/Playful"] == 0 and tag["/Theme/Brush"] > 0,INFO,"Brush style irregularities but not Playful?"
+tag["/Expressive/Playful"] == 0 and tag["/Theme/Woodtype"] > 0,INFO,"Decorative Woodtype but not Playful?"
+tag["/Expressive/Playful"] == 0 and tag["/Theme/Pixel"] > 0,INFO,"Pixel distortions but not Playful?"
+
+tag["/Expressive/Playful"] > 0 and tag["/Serif/Modern"] > 0,WARN,"Playful but Modern Serif?"
+tag["/Expressive/Playful"] > 0 and tag["/Serif/Didone"] > 0,WARN,"Playful but Didone?"
+tag["/Expressive/Playful"] > 0 and tag["/Expressive/Sophisticated"] > 0,WARN,"Playful but Sophisticated?"
+tag["/Expressive/Playful"] > 0 and tag["/Expressive/Sincere"] > 0,WARN,"Playful but Sincere?"
+tag["/Expressive/Playful"] > 0 and tag["/Expressive/Fancy"] > 0,INFO,"Playful and Fancy (overlap, check intent)?"
+tag["/Expressive/Playful"] > 0 and tag["/Expressive/Excited"] > 0,INFO,"Playful and Excited (ok, but check strength)?"
