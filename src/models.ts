@@ -420,31 +420,35 @@ export class GF {
 
   loadTaggings(commit?: string) {
     if (commit === undefined) {
-      commit = "refs/head/main"; // Default to main branch if no commit is specified
+      commit = "refs/heads/main"; // Default to main branch if no commit is specified
     }
-    // TODO send this back to urls once testing is done
-    loadText("families_new.csv").then((csvText) => {
-      const lines = csvText.split("\n");
-      for (let line of lines) {
-        const [familyName, axes, tagName, scoreStr] = line.split(",");
-        let score: number = parseFloat(scoreStr);
-        if (!familyName || !tagName) {
-          console.warn(
-            "Skipping line due to missing family name or tag name:",
-            line
+    const tagsUrl = `https://raw.githubusercontent.com/google/fonts/${commit}/tags/all/families.csv`;
+    // TODO this approach only works for static tags for now
+    fetch(tagsUrl)
+      .then((response) => response.text())
+      .then((csvText) => {
+        const lines = csvText.split("\n");
+        for (let line of lines) {
+          const [familyName, axes, tagName, scoreStr] = line.split(",");
+          let score: number = parseFloat(scoreStr);
+          if (!familyName || !tagName) {
+            console.warn(
+              "Skipping line due to missing family name or tag name:",
+              line
+            );
+            continue;
+          }
+          const family = this.family(familyName);
+          if (family === undefined || family.name === undefined) {
+            // console.warn("Family not found (loading tags):", familyName);
+            continue;
+          }
+          family.taggings.push(
+            new StaticTagging(family, this.tags[tagName], score)
           );
-          continue;
         }
-        const family = this.family(familyName);
-        if (family === undefined || family.name === undefined) {
-          // console.warn("Family not found (loading tags):", familyName);
-          continue;
-        }
-        family.taggings.push(
-          new StaticTagging(family, this.tags[tagName], score)
-        );
       }
-    });
+    );
   }
 
   exportTaggings() {
