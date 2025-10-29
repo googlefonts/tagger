@@ -423,7 +423,7 @@ export class GF {
       commit = "refs/head/main"; // Default to main branch if no commit is specified
     }
     // TODO send this back to urls once testing is done
-    loadText("families_new.csv").then((csvText) => {
+    loadText("families.csv").then((csvText) => {
       const lines = csvText.split("\n");
       for (let line of lines) {
         const [familyName, axes, tagName, scoreStr] = line.split(",");
