@@ -429,7 +429,7 @@ export class GF {
       .then((csvText) => {
         const lines = csvText.split("\n");
         for (let line of lines) {
-          const [familyName, axes, tagName, scoreStr] = line.split(",");
+          const [familyName, , tagName, scoreStr] = line.split(",");
           let score: number = parseFloat(scoreStr);
           if (!familyName || !tagName) {
             console.warn(
