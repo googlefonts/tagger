@@ -425,7 +425,12 @@ export class GF {
     const tagsUrl = `https://raw.githubusercontent.com/google/fonts/${commit}/tags/all/families.csv`;
     // TODO this approach only works for static tags for now
     fetch(tagsUrl)
-      .then((response) => response.text())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to fetch tags: ${response.status} ${response.statusText}`);
+        }
+        return response.text();
+      })
       .then((csvText) => {
         const lines = csvText.split("\n");
         for (let line of lines) {
@@ -447,8 +452,10 @@ export class GF {
             new StaticTagging(family, this.tags[tagName], score)
           );
         }
-      }
-    );
+      })
+      .catch((error) => {
+        console.error("Error loading taggings from CSV:", error);
+      });
   }
 
   exportTaggings() {
