@@ -19,7 +19,7 @@
     "@rushstack/eslint-patch": "^1.1.0",
     "@types/node": "^16.11.45",
     "@types/vue-select": "^3.16.8",
-    "@vitejs/plugin-legacy": "^2.0.0",
+    "@vitejs/plugin-legacy": "^7.2.1",
     "@vitejs/plugin-vue2": "^1.1.2",
     "@vue/eslint-config-prettier": "^7.0.0",
     "@vue/eslint-config-typescript": "^11.0.0",
@@ -31,7 +31,7 @@
     "prettier": "^2.5.1",
     "terser": "^5.14.2",
     "typescript": "~4.7.4",
-    "vite": "^3.0.2",
+    "vite": "^7.1.7",
     "vue-tsc": "^0.38.8"
   }
 }
