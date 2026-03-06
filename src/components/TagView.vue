@@ -1,16 +1,43 @@
 <script setup lang="ts">
-import { onBeforeMount } from 'vue';
+import { onBeforeMount, onBeforeUnmount, ref, computed } from 'vue';
 import type { PropType } from 'vue';
 import type { Tagging, Location } from '../models';
 import { EventBus } from '@/eventbus';
 
 const props = defineProps({
     tagging: Object as PropType<Tagging>,
-    location: Object as PropType<Location>, // For one day when we handle variable taggings
+    location: Object as PropType<Location>,
 });
 
 onBeforeMount(() => { EventBus.$emit('ensure-loaded', props.tagging?.font.name); });
 const removeTagging = () => { props.tagging?.font.removeTagging(props.tagging) }
+
+const currentLocationIndex = ref(0);
+let animationInterval: ReturnType<typeof setInterval> | null = null;
+
+const animatedStyle = computed(() => {
+    if (!props.tagging) return '';
+    if (!('scores' in props.tagging) || props.tagging.scores.length === 0) {
+        return props.tagging.font.cssStyle(32);
+    }
+    const entry = props.tagging.scores[currentLocationIndex.value % props.tagging.scores.length];
+    let style = `font-family: '${props.tagging.font.name}'; font-size: 32pt; transition: font-variation-settings 1s ease; font-variation-settings:`;
+    style += Object.entries(entry.location).map(([tag, val]) => ` '${tag}' ${val}`).join(',');
+    style += ';';
+    return style;
+});
+
+onBeforeMount(() => {
+    if (props.tagging && 'scores' in props.tagging && props.tagging.scores.length > 1) {
+        animationInterval = setInterval(() => {
+            currentLocationIndex.value++;
+        }, 2000);
+    }
+});
+
+onBeforeUnmount(() => {
+    if (animationInterval) clearInterval(animationInterval);
+});
 
 </script>
 
@@ -30,9 +57,20 @@ const removeTagging = () => { props.tagging?.font.removeTagging(props.tagging) }
             <span class="tag-score" v-if="props.tagging && !('scores' in props.tagging)">
                 Score: <input type="number" v-model.lazy="props.tagging.score" style="width: 60px;" />
             </span>
+            <span class="tag-score variable-tag" v-if="props.tagging && 'scores' in props.tagging">
+                Variable tag
+                <div v-for="(entry, idx) in props.tagging.scores" :key="idx">
+                    <span v-for="(val, axis) in entry.location" :key="axis">
+                        {{ axis }}=<input type="number" v-model.number="entry.location[axis]" style="width: 70px;"
+                            :min="props.tagging.font.axis(axis)?.min"
+                            :max="props.tagging.font.axis(axis)?.max" />
+                    </span>
+                    score=<input type="number" v-model.number="entry.score" style="width: 60px;" />
+                </div>
+            </span>
             <button @click="removeTagging" class="remove-tag-btn">Remove</button>
         </div>
-        <div class="text-editor" contenteditable="true" :style="props.tagging?.font.cssStyle(32)">
+        <div class="text-editor" contenteditable="true" :style="animatedStyle">
             Hello world
         </div>
     </div>
