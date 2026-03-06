@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ComputedRef } from 'vue';
 import { computed, ref, defineProps } from 'vue';
-import { GF, StaticTagging } from '../models';
+import { GF, StaticTagging, VariableTagging } from '../models';
 import type { Tagging } from '../models';
 
 const props = defineProps({
@@ -23,6 +23,7 @@ const selectedCategories = ref<string[]>(props.categories);
 const sortBy = ref('family'); // Default sorting option
 const tagFilter = ref('');
 const reverseTags = ref(false);
+const variableOnly = ref(false);
 
 const unappliedTaggings: ComputedRef<Tagging[]> = computed(() => {
   if (!selectedCategories.value) return [];
@@ -66,6 +67,9 @@ const filteredTaggings: ComputedRef<Tagging[]> = computed(() => {
     });
   }
 
+  if (variableOnly.value) {
+    filtered = filtered.filter(t => t instanceof VariableTagging);
+  }
   if (tagFilter.value !== "") {
     const myRegex = new RegExp(tagFilter.value, "i");
     filtered = filtered.filter(tag => myRegex.test(tag.font.name));
@@ -92,6 +96,7 @@ const filteredTaggings: ComputedRef<Tagging[]> = computed(() => {
         Reverse Order
       </button>
       <input type="text" v-model="tagFilter" placeholder="Filter tags by name" />
+      <label><input type="checkbox" v-model="variableOnly" /> Variable only</label>
     </div>
     <div v-for="tagging in filteredTaggings" :key="tagging.font.name + tagging.tag.name + tagging.score">
       <tag-view :tagging="tagging"></tag-view>
