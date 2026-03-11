@@ -15,20 +15,54 @@ const removeTagging = () => { props.tagging?.font.removeTagging(props.tagging) }
 const currentLocationIndex = ref(0);
 let animationInterval: ReturnType<typeof setInterval> | null = null;
 
+// Build cross-product of per-axis values for animation.
+// E.g. scores [{location:{wdth:75}}, {location:{wdth:100}}, {location:{wght:400}}, {location:{wght:900}}]
+// becomes [{wdth:75,wght:400}, {wdth:75,wght:900}, {wdth:100,wght:400}, {wdth:100,wght:900}]
+const animationFrames = computed(() => {
+    if (!props.tagging || !('scores' in props.tagging) || props.tagging.scores.length === 0) {
+        return [];
+    }
+    // Collect unique values per axis
+    const axisValues: Record<string, number[]> = {};
+    for (const entry of props.tagging.scores) {
+        for (const [axis, val] of Object.entries(entry.location)) {
+            if (!axisValues[axis]) axisValues[axis] = [];
+            if (!axisValues[axis].includes(val)) axisValues[axis].push(val);
+        }
+    }
+    // Sort each axis's values
+    for (const axis in axisValues) {
+        axisValues[axis].sort((a, b) => a - b);
+    }
+    // Generate cross-product (nested loop order: outer axis changes slowest)
+    const axes = Object.keys(axisValues);
+    let frames: Location[] = [{}];
+    for (const axis of axes) {
+        const newFrames: Location[] = [];
+        for (const frame of frames) {
+            for (const val of axisValues[axis]) {
+                newFrames.push({ ...frame, [axis]: val });
+            }
+        }
+        frames = newFrames;
+    }
+    return frames;
+});
+
 const animatedStyle = computed(() => {
     if (!props.tagging) return '';
-    if (!('scores' in props.tagging) || props.tagging.scores.length === 0) {
+    if (animationFrames.value.length === 0) {
         return props.tagging.font.cssStyle(32);
     }
-    const entry = props.tagging.scores[currentLocationIndex.value % props.tagging.scores.length];
+    const location = animationFrames.value[currentLocationIndex.value % animationFrames.value.length];
     let style = `font-family: '${props.tagging.font.name}'; font-size: 32pt; transition: font-variation-settings 1s ease; font-variation-settings:`;
-    style += Object.entries(entry.location).map(([tag, val]) => ` '${tag}' ${val}`).join(',');
+    style += Object.entries(location).map(([tag, val]) => ` '${tag}' ${val}`).join(',');
     style += ';';
     return style;
 });
 
 onBeforeMount(() => {
-    if (props.tagging && 'scores' in props.tagging && props.tagging.scores.length > 1) {
+    if (animationFrames.value.length > 1) {
         animationInterval = setInterval(() => {
             currentLocationIndex.value++;
         }, 2000);
