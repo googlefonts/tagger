@@ -461,15 +461,27 @@ export class GF {
   }
 
   exportTaggings() {
-    let csv = "";
-    for (let family of this.families.sort((a, b) =>
-      a.name.localeCompare(b.name)
-    )) {
-      for (let tagging of family.taggings.sort((a, b) =>
-        a.tag.name.localeCompare(b.tag.name)
-      )) {
-        csv += tagging.toCSV();
+    // Sort to match https://google.github.io/fonts/tags.html
+    // which sorts all taggings by "displayName,category" using
+    // case-sensitive string comparison (not localeCompare)
+    const allTaggings: Tagging[] = [];
+    for (const family of this.families) {
+      for (const tagging of family.taggings) {
+        if (tagging.toCSV() !== "") {
+          allTaggings.push(tagging);
+        }
       }
+    }
+    allTaggings.sort((a, b) => {
+      const aKey = `${a.font.name},${a.tag.name}`;
+      const bKey = `${b.font.name},${b.tag.name}`;
+      if (aKey < bKey) return -1;
+      if (aKey > bKey) return 1;
+      return 0;
+    });
+    let csv = "";
+    for (const tagging of allTaggings) {
+      csv += tagging.toCSV();
     }
     // Yeah, I guess this is neater than fiddling with octokit
     navigator.clipboard.writeText(csv);
