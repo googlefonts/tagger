@@ -287,7 +287,11 @@ export class GF {
     this.commit = "refs/heads/main";
   }
   async getFamilyData() {
-    let data = await loadText("family_data.json");
+    const response = await fetch("/api/fonts-metadata");
+    if (!response.ok) {
+      throw new Error(`Failed to fetch family data: ${response.status} ${response.statusText}`);
+    }
+    let data = await response.text();
     let parsedData: any = JSON.parse(data);
     let familyMeta = parsedData["familyMetadataList"];
     let styleEmbeddingsData = await loadText("embeddings.json");

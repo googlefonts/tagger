@@ -14,6 +14,15 @@ export default defineConfig({
       additionalLegacyPolyfills: ["regenerator-runtime/runtime"],
     }),
   ],
+  server: {
+    proxy: {
+      "/api/fonts-metadata": {
+        target: "https://fonts.sandbox.google.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/fonts-metadata/, "/metadata/fonts"),
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
