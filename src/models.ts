@@ -166,7 +166,8 @@ export class VariableTagging {
         Object.keys(scoreEntry.location).join(",") +
         "@" +
         Object.values(scoreEntry.location).join(",");
-      csv += `${this.font.name},"${gfStyleLocation}",${this.tag.name},${scoreEntry.score}\n`;
+      let quotedLocation = gfStyleLocation.includes(",") ? `"${gfStyleLocation}"` : gfStyleLocation;
+      csv += `${this.font.name},${quotedLocation},${this.tag.name},${scoreEntry.score}\n`;
     }
     return csv;
   }
