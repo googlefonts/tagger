@@ -9,6 +9,7 @@ import { EventBus } from './eventbus';
 
 let appLoaded = ref(false);
 let showUndefined = ref(false);
+let showPlaceholderDialog = ref(false);
 let gf = ref<GF | null>(null);
 // @ts-ignore
 window.gf = gf; // For debugging 
@@ -104,7 +105,9 @@ onBeforeMount(async () => {
       <button @click="addCategoriesPanel(['/Expressive/Loud'])">Tags in category</button>
       <button @click="addTodoPanel()">Todo List</button>
       <button @click="gf?.exportTaggings()">Save changes</button>
+      <button @click="showPlaceholderDialog = true">Placeholder Tags</button>
       <input type="checkbox" v-model="showUndefined">Show all</input>
+      <placeholder-tag-adder v-if="showPlaceholderDialog" :gf="gf" @close="showPlaceholderDialog = false" />
       <div style="display: flex; flex-direction: row; width: 100vw; min-height: 100vh;">
         <div v-for="(panel, idx) in panels" :key="idx"
           :style="{ flex: '1 1 0', minWidth: 0, borderRight: idx < panels.length - 1 ? '1px solid #eee' : 'none', height: '100vh', overflow: 'auto' }">

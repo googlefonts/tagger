@@ -166,7 +166,8 @@ export class VariableTagging {
         Object.keys(scoreEntry.location).join(",") +
         "@" +
         Object.values(scoreEntry.location).join(",");
-      csv += `${this.font.name},"${gfStyleLocation}",${this.tag.name},${scoreEntry.score}\n`;
+      let quotedLocation = gfStyleLocation.includes(",") ? `"${gfStyleLocation}"` : gfStyleLocation;
+      csv += `${this.font.name},${quotedLocation},${this.tag.name},${scoreEntry.score}\n`;
     }
     return csv;
   }
@@ -287,7 +288,11 @@ export class GF {
     this.commit = "refs/heads/main";
   }
   async getFamilyData() {
-    let data = await loadText("family_data.json");
+    const response = await fetch("/api/fonts-metadata");
+    if (!response.ok) {
+      throw new Error(`Failed to fetch family data: ${response.status} ${response.statusText}`);
+    }
+    let data = await response.text();
     let parsedData: any = JSON.parse(data);
     let familyMeta = parsedData["familyMetadataList"];
     let styleEmbeddingsData = await loadText("embeddings.json");
@@ -461,15 +466,27 @@ export class GF {
   }
 
   exportTaggings() {
-    let csv = "";
-    for (let family of this.families.sort((a, b) =>
-      a.name.localeCompare(b.name)
-    )) {
-      for (let tagging of family.taggings.sort((a, b) =>
-        a.tag.name.localeCompare(b.tag.name)
-      )) {
-        csv += tagging.toCSV();
+    // Sort to match https://google.github.io/fonts/tags.html
+    // which sorts all taggings by "displayName,category" using
+    // case-sensitive string comparison (not localeCompare)
+    const allTaggings: Tagging[] = [];
+    for (const family of this.families) {
+      for (const tagging of family.taggings) {
+        if (tagging.toCSV() !== "") {
+          allTaggings.push(tagging);
+        }
       }
+    }
+    allTaggings.sort((a, b) => {
+      const aKey = `${a.font.name},${a.tag.name}`;
+      const bKey = `${b.font.name},${b.tag.name}`;
+      if (aKey < bKey) return -1;
+      if (aKey > bKey) return 1;
+      return 0;
+    });
+    let csv = "";
+    for (const tagging of allTaggings) {
+      csv += tagging.toCSV();
     }
     // Yeah, I guess this is neater than fiddling with octokit
     navigator.clipboard.writeText(csv);
