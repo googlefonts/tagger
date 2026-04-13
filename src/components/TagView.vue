@@ -13,6 +13,7 @@ onBeforeMount(() => { EventBus.$emit('ensure-loaded', props.tagging?.font.name);
 const removeTagging = () => { props.tagging?.font.removeTagging(props.tagging) }
 
 const currentLocationIndex = ref(0);
+const editing = ref(false);
 let animationInterval: ReturnType<typeof setInterval> | null = null;
 
 // Build cross-product of per-axis values for animation.
@@ -64,7 +65,7 @@ const animatedStyle = computed(() => {
 onBeforeMount(() => {
     if (animationFrames.value.length > 1) {
         animationInterval = setInterval(() => {
-            currentLocationIndex.value++;
+            if (!editing.value) currentLocationIndex.value++;
         }, 2000);
     }
 });
@@ -95,11 +96,17 @@ onBeforeUnmount(() => {
                 Variable tag
                 <div v-for="(entry, idx) in props.tagging.scores" :key="idx">
                     <span v-for="(val, axis) in entry.location" :key="axis">
-                        {{ axis }}=<input type="number" v-model.number="entry.location[axis]" style="width: 70px;"
+                        {{ axis }}=<input type="number" :value="entry.location[axis]" style="width: 70px;"
                             :min="props.tagging.font.axis(axis)?.min"
-                            :max="props.tagging.font.axis(axis)?.max" />
+                            :max="props.tagging.font.axis(axis)?.max"
+                            @focus="editing = true"
+                            @change="entry.location[axis] = Number($event.target.value)"
+                            @blur="editing = false" />
                     </span>
-                    score=<input type="number" v-model.number="entry.score" style="width: 60px;" />
+                    score=<input type="number" :value="entry.score" style="width: 60px;"
+                        @focus="editing = true"
+                        @change="entry.score = Number($event.target.value)"
+                        @blur="editing = false" />
                 </div>
             </span>
             <button @click="removeTagging" class="remove-tag-btn">Remove</button>
