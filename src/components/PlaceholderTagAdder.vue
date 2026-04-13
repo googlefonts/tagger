@@ -112,11 +112,11 @@ function submitVariable() {
 
       <div v-if="mode === 'variable'">
         <div v-for="(spec, idx) in axisSpecs" :key="idx" class="axis-spec-row">
-          <label>Axis: <input type="text" v-model="spec.axisName" placeholder="e.g. wght" style="width: 80px;" /></label>
-          <label>Min axis: <input type="number" v-model.number="spec.minAxis" style="width: 80px;" /></label>
-          <label>Max axis: <input type="number" v-model.number="spec.maxAxis" style="width: 80px;" /></label>
-          <label>Min score: <input type="number" v-model.number="spec.minScore" style="width: 60px;" /></label>
-          <label>Max score: <input type="number" v-model.number="spec.maxScore" style="width: 60px;" /></label>
+          <label>Axis:</label> <input type="text" v-model="spec.axisName" placeholder="e.g. wght" style="width: 80px;" />
+          <label>Min axis:</label> <input type="number" v-model.number="spec.minAxis" style="width: 80px;" />
+          <label>Max axis:</label> <input type="number" v-model.number="spec.maxAxis" style="width: 80px;" />
+          <label>Min score:</label> <input type="number" v-model.number="spec.minScore" style="width: 60px;" />
+          <label>Max score:</label> <input type="number" v-model.number="spec.maxScore" style="width: 60px;" />
           <button @click="removeAxisSpec(idx)">Remove</button>
         </div>
         <button @click="addAxisSpec">Add axis</button>
@@ -156,10 +156,20 @@ function submitVariable() {
 }
 
 .axis-spec-row {
-  margin-bottom: 8px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 8px;
+  row-gap: 4px;
+  align-items: center;
+  margin-bottom: 12px;
 }
 
 .axis-spec-row label {
-  margin-right: 8px;
+  text-align: right;
+}
+
+.axis-spec-row button {
+  grid-column: 1 / -1;
+  justify-self: start;
 }
 </style>
