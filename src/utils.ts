@@ -3,7 +3,8 @@
 export async function loadText(path: string): Promise<string> {
   if (typeof window !== "undefined" && window.fetch) {
     // Browser environment
-    const response = await fetch(path);
+    const url = path.startsWith("http") ? path : import.meta.env.BASE_URL + path;
+    const response = await fetch(url);
     return await response.text();
   } else if (typeof require !== "undefined") {
     // Node.js environment
