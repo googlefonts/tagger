@@ -16,6 +16,10 @@ const props = defineProps({
   showUndefined: {
     type: Boolean,
     default: false
+  },
+  vfDisplayMode: {
+    type: String as () => 'animated' | 'list',
+    default: 'animated'
   }
 });
 
@@ -99,7 +103,7 @@ const filteredTaggings: ComputedRef<Tagging[]> = computed(() => {
       <label><input type="checkbox" v-model="variableOnly" /> Variable only</label>
     </div>
     <div v-for="tagging in filteredTaggings" :key="tagging.font.name + tagging.tag.name + tagging.score">
-      <tag-view :tagging="tagging"></tag-view>
+      <tag-view :tagging="tagging" :vfDisplayMode="props.vfDisplayMode"></tag-view>
     </div>
   </div>
 </template>

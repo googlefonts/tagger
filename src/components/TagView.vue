@@ -7,6 +7,10 @@ import { EventBus } from '@/eventbus';
 const props = defineProps({
     tagging: Object as PropType<Tagging>,
     location: Object as PropType<Location>,
+    vfDisplayMode: {
+        type: String as PropType<'animated' | 'list'>,
+        default: 'animated',
+    },
 });
 
 onBeforeMount(() => { EventBus.$emit('ensure-loaded', props.tagging?.font.name); });
@@ -62,6 +66,18 @@ const animatedStyle = computed(() => {
     return style;
 });
 
+function styleForLocation(location: Location) {
+    if (!props.tagging) return '';
+    let style = `font-family: '${props.tagging.font.name}'; font-size: 32pt; font-variation-settings:`;
+    style += Object.entries(location).map(([tag, val]) => ` '${tag}' ${val}`).join(',');
+    style += ';';
+    return style;
+}
+
+function locationLabel(location: Location) {
+    return Object.entries(location).map(([axis, val]) => `${axis}=${val}`).join(', ');
+}
+
 onBeforeMount(() => {
     if (animationFrames.value.length > 1) {
         animationInterval = setInterval(() => {
@@ -111,8 +127,16 @@ onBeforeUnmount(() => {
             </span>
             <button @click="removeTagging" class="remove-tag-btn">Remove</button>
         </div>
-        <div class="text-editor" contenteditable="true" :style="animatedStyle">
+        <div v-if="!props.tagging || !('scores' in props.tagging) || props.vfDisplayMode === 'animated'" class="text-editor" contenteditable="true" :style="animatedStyle">
             Hello world
+        </div>
+        <div v-else class="location-list">
+            <div v-for="(entry, idx) in props.tagging.scores" :key="idx" class="location-entry">
+                <div class="location-label">{{ locationLabel(entry.location) }} (score: {{ entry.score }})</div>
+                <div class="text-editor" contenteditable="true" :style="styleForLocation(entry.location)">
+                    Hello world
+                </div>
+            </div>
         </div>
     </div>
 </template>
