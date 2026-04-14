@@ -442,8 +442,10 @@ export class GF {
       })
       .then((csvText) => {
         const lines = csvText.split("\n");
+        // Collect variable tag entries keyed by "familyName,tagName"
+        const variableEntries: Record<string, { family: Font; tag: Tag; scores: { location: Location; score: number }[] }> = {};
         for (let line of lines) {
-          const [familyName, , tagName, scoreStr] = line.split(",");
+          const [familyName, axisStr, tagName, scoreStr] = line.split(",");
           let score: number = parseFloat(scoreStr);
           if (!familyName || !tagName) {
             console.warn(
@@ -461,7 +463,23 @@ export class GF {
             console.warn("Unknown tag:", tagName, "for family:", familyName);
             continue;
           }
-          family.taggings.push(new StaticTagging(family, tag, score));
+          if (axisStr && axisStr.includes("@")) {
+            const [axisTag, axisVal] = axisStr.split("@");
+            const key = `${familyName},${tagName}`;
+            if (!variableEntries[key]) {
+              variableEntries[key] = { family, tag, scores: [] };
+            }
+            variableEntries[key].scores.push({
+              location: { [axisTag]: parseFloat(axisVal) },
+              score,
+            });
+          } else {
+            family.taggings.push(new StaticTagging(family, tag, score));
+          }
+        }
+        // Create VariableTaggings from grouped entries
+        for (const entry of Object.values(variableEntries)) {
+          entry.family.taggings.push(new VariableTagging(entry.family, entry.tag, entry.scores));
         }
       })
       .catch((error) => {
