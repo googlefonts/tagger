@@ -419,10 +419,18 @@ export class GF {
     return Object.keys(this.tags).sort();
   }
 
+  clearTaggings() {
+    for (const family of this.families) {
+      family.taggings = [];
+    }
+  }
+
   loadTaggings(commit?: string) {
     if (commit === undefined) {
       commit = "refs/heads/main"; // Default to main branch if no commit is specified
     }
+    this.commit = commit;
+    this.clearTaggings();
     const tagsUrl = `https://raw.githubusercontent.com/google/fonts/${commit}/tags/all/families.csv`;
     // TODO this approach only works for static tags for now
     fetch(tagsUrl)

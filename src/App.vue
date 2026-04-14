@@ -11,6 +11,13 @@ let appLoaded = ref(false);
 let showUndefined = ref(false);
 let showPlaceholderDialog = ref(false);
 let vfDisplayMode = ref<'animated' | 'list'>('animated');
+let commitRef = ref('refs/heads/main');
+
+function loadFromCommit() {
+  if (gf.value) {
+    gf.value.loadTaggings(commitRef.value);
+  }
+}
 let gf = ref<GF | null>(null);
 // @ts-ignore
 window.gf = gf; // For debugging 
@@ -111,6 +118,8 @@ onBeforeMount(async () => {
       <button @click="vfDisplayMode = vfDisplayMode === 'animated' ? 'list' : 'animated'">
         VF: {{ vfDisplayMode === 'animated' ? 'Animated' : 'List' }}
       </button>
+      <label>Commit: <input type="text" v-model.lazy="commitRef" @change="loadFromCommit"
+        style="width: 280px; font-family: monospace;" /></label>
       <placeholder-tag-adder v-if="showPlaceholderDialog" :gf="gf" @close="showPlaceholderDialog = false" />
       <div style="display: flex; flex-direction: row; width: 100vw; min-height: 100vh;">
         <div v-for="(panel, idx) in panels" :key="idx"
