@@ -28,6 +28,7 @@ const sortBy = ref('family'); // Default sorting option
 const tagFilter = ref('');
 const reverseTags = ref(false);
 const variableOnly = ref(false);
+const staticOnly = ref(false);
 
 const unappliedTaggings: ComputedRef<Tagging[]> = computed(() => {
   if (!selectedCategories.value) return [];
@@ -49,7 +50,14 @@ const filteredTaggings: ComputedRef<Tagging[]> = computed(() => {
     filtered = filtered.concat(unappliedTaggings.value);
   }
   if (sortBy.value === 'score') {
-    filtered = filtered.sort((a, b) => (b.score || 0) - (a.score || 0));
+    const sortScore = (t: Tagging) => {
+      if ('scores' in t) {
+        const scores = t.scores.map(s => s.score);
+        return reverseTags.value ? Math.min(...scores) : Math.max(...scores);
+      }
+      return t.score || 0;
+    };
+    filtered = filtered.sort((a, b) => sortScore(b) - sortScore(a));
   }
   if (sortBy.value === 'family') {
     filtered = filtered.sort((a, b) => {
@@ -73,6 +81,9 @@ const filteredTaggings: ComputedRef<Tagging[]> = computed(() => {
 
   if (variableOnly.value) {
     filtered = filtered.filter(t => t instanceof VariableTagging);
+  }
+  if (staticOnly.value) {
+    filtered = filtered.filter(t => t instanceof StaticTagging);
   }
   if (tagFilter.value !== "") {
     const myRegex = new RegExp(tagFilter.value, "i");
@@ -100,7 +111,8 @@ const filteredTaggings: ComputedRef<Tagging[]> = computed(() => {
         Reverse Order
       </button>
       <input type="text" v-model="tagFilter" placeholder="Filter tags by name" />
-      <label><input type="checkbox" v-model="variableOnly" /> Variable only</label>
+      <label><input type="checkbox" v-model="variableOnly" :disabled="staticOnly" /> Variable only</label>
+      <label><input type="checkbox" v-model="staticOnly" :disabled="variableOnly" /> Static only</label>
     </div>
     <div v-for="tagging in filteredTaggings" :key="tagging.font.name + tagging.tag.name + tagging.score">
       <tag-view :tagging="tagging" :vfDisplayMode="props.vfDisplayMode"></tag-view>
