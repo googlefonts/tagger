@@ -15,6 +15,7 @@ const props = defineProps({
 
 onBeforeMount(() => { EventBus.$emit('ensure-loaded', props.tagging?.font.name); });
 const removeTagging = () => { props.tagging?.font.removeTagging(props.tagging) }
+const inputValue = (e: Event) => Number((e.target as HTMLInputElement).value);
 
 const currentLocationIndex = ref(0);
 const editing = ref(false);
@@ -116,12 +117,12 @@ onBeforeUnmount(() => {
                             :min="props.tagging.font.axis(axis)?.min"
                             :max="props.tagging.font.axis(axis)?.max"
                             @focus="editing = true"
-                            @change="entry.location[axis] = Number($event.target.value)"
+                            @change="entry.location[axis] = inputValue($event)"
                             @blur="editing = false" />
                     </span>
                     score=<input type="number" :value="entry.score" style="width: 60px;"
                         @focus="editing = true"
-                        @change="entry.score = Number($event.target.value)"
+                        @change="entry.score = inputValue($event)"
                         @blur="editing = false" />
                 </div>
             </span>
