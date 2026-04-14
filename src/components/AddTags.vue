@@ -101,7 +101,7 @@ function addTags() {
             <input type="number" v-model="currentLowScore" placeholder="Score" />
             <br>
             <input type="text" v-model="currentLowAxis" placeholder="Axis name" />
-            <input type="number" v-model="currentLowPosition" placeholder="Position" />
+            <input type="number" v-model.lazy="currentLowPosition" placeholder="Position" />
             <select v-model="currentLowOp">
                 <option value="<=">&lt;=</option>
                 <option value=">=">&gt;=</option>
@@ -110,10 +110,10 @@ function addTags() {
 
             <h3>High Tag:</h3>
             Score:
-            <input type="number" v-model="currentHighScore" placeholder="Score" />
+            <input type="number" v-model.lazy="currentHighScore" placeholder="Score" />
             <br>
-            <input type="text" v-model="currentHighAxis" placeholder="Axis name" />
-            <input type="number" v-model="currentHighPosition" placeholder="Position" />
+            <input type="text" v-model.lazy="currentHighAxis" placeholder="Axis name" />
+            <input type="number" v-model.lazy="currentHighPosition" placeholder="Position" />
             <select v-model="currentHighOp">
                 <option value="<=">&lt;=</option>
                 <option value=">=">&gt;=</option>

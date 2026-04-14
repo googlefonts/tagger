@@ -25,6 +25,7 @@ const props = defineProps<{
   panel: Panel,
   gf: GF,
   showUndefined: boolean,
+  vfDisplayMode: 'animated' | 'list',
 }>();
 const emit = defineEmits(["remove-panel", "shift-left", "shift-right"]);
 
@@ -52,9 +53,9 @@ onMounted(() => {
     <button @click="emit('shift-left')" style="float:right">←</button>
     <button @click="emit('shift-right')" style="float:right">→</button>
     <tags-by-font v-if="panel.type === 'font'" :font="panel.font" :gf="gf"
-      :showUndefined="props.showUndefined"></tags-by-font>
+      :showUndefined="props.showUndefined" :vfDisplayMode="props.vfDisplayMode"></tags-by-font>
     <tags-by-categories v-else-if="panel.type === 'categories'" :categories="panel.categories"
-      :gf="gf" :showUndefined="props.showUndefined"></tags-by-categories>
+      :gf="gf" :showUndefined="props.showUndefined" :vfDisplayMode="props.vfDisplayMode"></tags-by-categories>
     <todo v-else-if="panel.type === 'todo'" :gf="gf"></todo>
   </div>
 </template>

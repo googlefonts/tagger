@@ -7,12 +7,18 @@ import { EventBus } from '@/eventbus';
 const props = defineProps({
     tagging: Object as PropType<Tagging>,
     location: Object as PropType<Location>,
+    vfDisplayMode: {
+        type: String as PropType<'animated' | 'list'>,
+        default: 'animated',
+    },
 });
 
 onBeforeMount(() => { EventBus.$emit('ensure-loaded', props.tagging?.font.name); });
 const removeTagging = () => { props.tagging?.font.removeTagging(props.tagging) }
+const inputValue = (e: Event) => Number((e.target as HTMLInputElement).value);
 
 const currentLocationIndex = ref(0);
+const editing = ref(false);
 let animationInterval: ReturnType<typeof setInterval> | null = null;
 
 // Build cross-product of per-axis values for animation.
@@ -61,10 +67,22 @@ const animatedStyle = computed(() => {
     return style;
 });
 
+function styleForLocation(location: Location) {
+    if (!props.tagging) return '';
+    let style = `font-family: '${props.tagging.font.name}'; font-size: 32pt; font-variation-settings:`;
+    style += Object.entries(location).map(([tag, val]) => ` '${tag}' ${val}`).join(',');
+    style += ';';
+    return style;
+}
+
+function locationLabel(location: Location) {
+    return Object.entries(location).map(([axis, val]) => `${axis}=${val}`).join(', ');
+}
+
 onBeforeMount(() => {
     if (animationFrames.value.length > 1) {
         animationInterval = setInterval(() => {
-            currentLocationIndex.value++;
+            if (!editing.value) currentLocationIndex.value++;
         }, 2000);
     }
 });
@@ -95,17 +113,31 @@ onBeforeUnmount(() => {
                 Variable tag
                 <div v-for="(entry, idx) in props.tagging.scores" :key="idx">
                     <span v-for="(val, axis) in entry.location" :key="axis">
-                        {{ axis }}=<input type="number" v-model.number="entry.location[axis]" style="width: 70px;"
+                        {{ axis }}=<input type="number" :value="entry.location[axis]" style="width: 70px;"
                             :min="props.tagging.font.axis(axis)?.min"
-                            :max="props.tagging.font.axis(axis)?.max" />
+                            :max="props.tagging.font.axis(axis)?.max"
+                            @focus="editing = true"
+                            @change="entry.location[axis] = inputValue($event)"
+                            @blur="editing = false" />
                     </span>
-                    score=<input type="number" v-model.number="entry.score" style="width: 60px;" />
+                    score=<input type="number" :value="entry.score" style="width: 60px;"
+                        @focus="editing = true"
+                        @change="entry.score = inputValue($event)"
+                        @blur="editing = false" />
                 </div>
             </span>
             <button @click="removeTagging" class="remove-tag-btn">Remove</button>
         </div>
-        <div class="text-editor" contenteditable="true" :style="animatedStyle">
+        <div v-if="!props.tagging || !('scores' in props.tagging) || props.vfDisplayMode === 'animated'" class="text-editor" contenteditable="true" :style="animatedStyle">
             Hello world
+        </div>
+        <div v-else class="location-list">
+            <div v-for="(entry, idx) in props.tagging.scores" :key="idx" class="location-entry">
+                <div class="location-label">{{ locationLabel(entry.location) }} (score: {{ entry.score }})</div>
+                <div class="text-editor" contenteditable="true" :style="styleForLocation(entry.location)">
+                    Hello world
+                </div>
+            </div>
         </div>
     </div>
 </template>
