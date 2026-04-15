@@ -277,6 +277,7 @@ export class GF {
   lintRules: LintRule[]; // Array to hold lint rules
   linter: any; // Linter instance
   commit: string; // Git commit hash or branch name in google/fonts for tag data
+  prNumber: number | null; // PR number if loaded from a PR URL
 
   constructor() {
     this.familyData = {};
@@ -286,6 +287,7 @@ export class GF {
     this.linter = linter;
     this.loadedFamilies = [];
     this.commit = "refs/heads/main";
+    this.prNumber = null;
   }
   async getFamilyData() {
     let data = await loadText("family_data.json");
@@ -425,13 +427,38 @@ export class GF {
     }
   }
 
-  loadTaggings(commit?: string) {
-    if (commit === undefined) {
-      commit = "refs/heads/main"; // Default to main branch if no commit is specified
+  loadTaggings(commitOrUrl?: string) {
+    if (commitOrUrl === undefined) {
+      commitOrUrl = "refs/heads/main";
     }
-    this.commit = commit;
+
+    // Check if it's a PR URL
+    commitOrUrl = commitOrUrl.trim();
+    const prMatch = commitOrUrl.match(/github\.com\/google\/fonts\/pull\/(\d+)/) ||
+      commitOrUrl.match(/^(\d+)$/); // Also accept bare PR number
+    if (prMatch) {
+      this.prNumber = parseInt(prMatch[1]);
+      fetch(`https://api.github.com/repos/google/fonts/pulls/${this.prNumber}`)
+        .then((r) => r.json())
+        .then((pr) => {
+          const branch = pr.head.ref;
+          this.commit = branch;
+          this._loadTaggingsFromRef(branch);
+        })
+        .catch((error) => {
+          console.error("Error fetching PR:", error);
+        });
+      return;
+    }
+
+    this.prNumber = null;
+    this.commit = commitOrUrl;
+    this._loadTaggingsFromRef(commitOrUrl);
+  }
+
+  private _loadTaggingsFromRef(ref: string) {
     this.clearTaggings();
-    const tagsUrl = `https://raw.githubusercontent.com/google/fonts/${commit}/tags/all/families.csv`;
+    const tagsUrl = `https://raw.githubusercontent.com/google/fonts/${ref}/tags/all/families.csv`;
     // TODO this approach only works for static tags for now
     fetch(tagsUrl)
       .then((response) => {
@@ -512,14 +539,10 @@ export class GF {
     }
     // Yeah, I guess this is neater than fiddling with octokit
     navigator.clipboard.writeText(csv);
-    if (this.commit !== "refs/heads/main") {
-      window.open(
-        `https://github.com/google/fonts/edit/${this.commit}/tags/all/families.csv`
-      );
-    } else {
-      window.open(
-        "https://github.com/google/fonts/edit/main/tags/all/families.csv"
-      );
+    let editUrl = `https://github.com/google/fonts/edit/${this.commit}/tags/all/families.csv`;
+    if (this.prNumber) {
+      editUrl += `?pr=/google/fonts/pull/${this.prNumber}`;
     }
+    window.open(editUrl);
   }
 }
