@@ -3,12 +3,24 @@ import { ref } from 'vue';
 import { GF, StaticTagging, VariableTagging } from '../models';
 import type { Location } from '../models';
 
+interface AxisPosition {
+  axisValue: number;
+  score: number;
+}
+
 interface AxisSpec {
   axisName: string;
-  minAxis: number;
-  maxAxis: number;
-  minScore: number;
-  maxScore: number;
+  positions: AxisPosition[];
+}
+
+function makePositions(count: number): AxisPosition[] {
+  const n = Math.max(2, Math.floor(count || 2));
+  const positions: AxisPosition[] = [];
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1);
+    positions.push({ axisValue: 0, score: Math.round(t * 100) });
+  }
+  return positions;
 }
 
 const props = defineProps({
@@ -24,14 +36,31 @@ const mode = ref<'static' | 'variable'>('static');
 const selectedCategories = ref<string[]>([]);
 const placeholderScore = ref<number>(0);
 const overwriteExisting = ref<boolean>(false);
+const onlyReplaceExisting = ref<boolean>(false);
 const axisSpecs = ref<AxisSpec[]>([]);
 
 function addAxisSpec() {
-  axisSpecs.value.push({ axisName: '', minAxis: 0, maxAxis: 0, minScore: 0, maxScore: 100 });
+  axisSpecs.value.push({ axisName: '', positions: makePositions(2) });
 }
 
 function removeAxisSpec(idx: number) {
   axisSpecs.value.splice(idx, 1);
+}
+
+function setPositionCount(spec: AxisSpec, event: Event) {
+  const count = (event.target as HTMLInputElement).valueAsNumber;
+  const n = Math.max(2, Math.floor(count || 2));
+  while (spec.positions.length < n) {
+    spec.positions.push({ axisValue: 0, score: 0 });
+  }
+  if (spec.positions.length > n) {
+    spec.positions.splice(n);
+  }
+}
+
+function removePosition(spec: AxisSpec, idx: number) {
+  if (spec.positions.length <= 2) return;
+  spec.positions.splice(idx, 1);
 }
 
 function submitStatic() {
@@ -40,12 +69,14 @@ function submitStatic() {
     if (!tag) continue;
     for (const family of props.gf.families) {
       if (family.hasTagging(categoryName)) {
-        if (overwriteExisting.value) {
+        if (onlyReplaceExisting.value || overwriteExisting.value) {
           const existing = family.taggings.find(t => t.tag.name === categoryName);
           if (existing) family.removeTagging(existing);
         } else {
           continue;
         }
+      } else if (onlyReplaceExisting.value) {
+        continue;
       }
       family.taggings.push(new StaticTagging(family, tag, placeholderScore.value));
     }
@@ -62,25 +93,41 @@ function submitVariable() {
       return axisSpecs.value.every(spec => {
         const axis = family.axis(spec.axisName);
         if (!axis) return false;
-        return axis.min <= spec.minAxis && axis.max >= spec.maxAxis;
+        const axisValues = spec.positions.map(p => p.axisValue);
+        const minAxis = Math.min(...axisValues);
+        const maxAxis = Math.max(...axisValues);
+        return axis.min <= minAxis && axis.max >= maxAxis;
       });
     });
 
     for (const family of matchingFamilies) {
+      // If we're replacing a static tagging, inherit its score at the default
+      // location (wght=400) so the variable tagging keeps the existing value there.
+      let inheritedDefaultScore: number | null = null;
       if (family.hasTagging(categoryName)) {
-        if (overwriteExisting.value) {
+        if (onlyReplaceExisting.value || overwriteExisting.value) {
           const existing = family.taggings.find(t => t.tag.name === categoryName);
-          if (existing) family.removeTagging(existing);
+          if (existing) {
+            if (existing instanceof StaticTagging && existing.score !== null) {
+              inheritedDefaultScore = existing.score;
+            }
+            family.removeTagging(existing);
+          }
         } else {
           continue;
         }
+      } else if (onlyReplaceExisting.value) {
+        continue;
       }
       const scores: { location: Location; score: number }[] = [];
       for (const spec of axisSpecs.value) {
-        scores.push(
-          { location: { [spec.axisName]: spec.minAxis }, score: spec.minScore },
-          { location: { [spec.axisName]: spec.maxAxis }, score: spec.maxScore }
-        );
+        for (const pos of spec.positions) {
+          const inherit = inheritedDefaultScore !== null && spec.axisName === 'wght' && pos.axisValue === 400;
+          scores.push({
+            location: { [spec.axisName]: pos.axisValue },
+            score: inherit ? inheritedDefaultScore! : pos.score
+          });
+        }
       }
       family.taggings.push(new VariableTagging(family, tag, scores));
     }
@@ -102,7 +149,8 @@ function submitVariable() {
       <h4>Categories</h4>
       <v-select v-model="selectedCategories" multiple :options="gf.uniqueTagNames().sort()"></v-select>
 
-      <label><input type="checkbox" v-model="overwriteExisting" /> Overwrite existing tags</label>
+      <label><input type="checkbox" v-model="overwriteExisting" :disabled="onlyReplaceExisting" /> Overwrite existing tags</label>
+      <label><input type="checkbox" v-model="onlyReplaceExisting" /> Only replace existing tags</label>
 
       <div v-if="mode === 'static'">
         <label>Placeholder score: <input type="number" v-model.number="placeholderScore" min="0" max="100" /></label>
@@ -111,13 +159,22 @@ function submitVariable() {
       </div>
 
       <div v-if="mode === 'variable'">
-        <div v-for="(spec, idx) in axisSpecs" :key="idx" class="axis-spec-row">
-          <label>Axis:</label> <input type="text" v-model="spec.axisName" placeholder="e.g. wght" style="width: 80px;" />
-          <label>Min axis:</label> <input type="number" v-model.number="spec.minAxis" style="width: 80px;" />
-          <label>Max axis:</label> <input type="number" v-model.number="spec.maxAxis" style="width: 80px;" />
-          <label>Min score:</label> <input type="number" v-model.number="spec.minScore" style="width: 60px;" />
-          <label>Max score:</label> <input type="number" v-model.number="spec.maxScore" style="width: 60px;" />
-          <button @click="removeAxisSpec(idx)">Remove</button>
+        <div v-for="(spec, idx) in axisSpecs" :key="idx" class="axis-spec">
+          <div class="axis-spec-header">
+            <label>Axis:</label>
+            <input type="text" v-model="spec.axisName" placeholder="e.g. wght" style="width: 80px;" />
+            <label>Positions:</label>
+            <input type="number" min="2" step="1" :value="spec.positions.length"
+              @input="setPositionCount(spec, $event)" style="width: 60px;" />
+            <button @click="removeAxisSpec(idx)">Remove axis</button>
+          </div>
+          <div v-for="(pos, posIdx) in spec.positions" :key="posIdx" class="position-row">
+            <label>Axis value:</label>
+            <input type="number" v-model.number="pos.axisValue" style="width: 80px;" />
+            <label>Score:</label>
+            <input type="number" v-model.number="pos.score" min="0" max="100" style="width: 60px;" />
+            <button v-if="spec.positions.length > 2" @click="removePosition(spec, posIdx)">Remove</button>
+          </div>
         </div>
         <button @click="addAxisSpec">Add axis</button>
         <br />
@@ -155,21 +212,24 @@ function submitVariable() {
   overflow: auto;
 }
 
-.axis-spec-row {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  column-gap: 8px;
-  row-gap: 4px;
-  align-items: center;
+.axis-spec {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 8px 12px;
   margin-bottom: 12px;
 }
 
-.axis-spec-row label {
-  text-align: right;
+.axis-spec-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
-.axis-spec-row button {
-  grid-column: 1 / -1;
-  justify-self: start;
+.position-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 4px 16px;
 }
 </style>
