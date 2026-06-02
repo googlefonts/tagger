@@ -53,6 +53,10 @@ const filteredTaggings: ComputedRef<Tagging[]> = computed(() => {
     const sortScore = (t: Tagging) => {
       if ('scores' in t) {
         const scores = t.scores.map(s => s.score);
+        if (scores.length === 0) return 0;
+        // Rank each variable tagging by the extreme of its whole set of points
+        // (including any midpoints): its peak when sorting high→low, its valley
+        // when sorting low→high.
         return reverseTags.value ? Math.min(...scores) : Math.max(...scores);
       }
       return t.score || 0;
