@@ -1,11 +1,24 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { GF, StaticTagging, VariableTagging } from '../models';
-import type { Location } from '../models';
+import type { Axis, Location } from '../models';
 
 interface AxisPosition {
-  axisValue: number;
+  // A number, or the keywords "min"/"max" which resolve to each font's own axis bounds.
+  axisValue: number | string;
   score: number;
+}
+
+// Resolve a position's axis value against a specific font's axis.
+// "min"/"max" map to that font's axis bounds; numeric strings are parsed.
+// Returns null if the value can't be resolved to a number.
+function resolveAxisValue(rawValue: number | string, axis: Axis): number | null {
+  if (typeof rawValue === 'number') return rawValue;
+  const v = rawValue.trim().toLowerCase();
+  if (v === 'min') return axis.min;
+  if (v === 'max') return axis.max;
+  const n = parseFloat(rawValue);
+  return isNaN(n) ? null : n;
 }
 
 interface AxisSpec {
@@ -93,9 +106,11 @@ function submitVariable() {
       return axisSpecs.value.every(spec => {
         const axis = family.axis(spec.axisName);
         if (!axis) return false;
-        const axisValues = spec.positions.map(p => p.axisValue);
-        const minAxis = Math.min(...axisValues);
-        const maxAxis = Math.max(...axisValues);
+        // "min"/"max" always resolve within range; only explicit numbers can fall outside it.
+        const axisValues = spec.positions.map(p => resolveAxisValue(p.axisValue, axis));
+        if (axisValues.some(v => v === null)) return false;
+        const minAxis = Math.min(...axisValues as number[]);
+        const maxAxis = Math.max(...axisValues as number[]);
         return axis.min <= minAxis && axis.max >= maxAxis;
       });
     });
@@ -121,10 +136,14 @@ function submitVariable() {
       }
       const scores: { location: Location; score: number }[] = [];
       for (const spec of axisSpecs.value) {
+        const axis = family.axis(spec.axisName);
+        if (!axis) continue;
         for (const pos of spec.positions) {
-          const inherit = inheritedDefaultScore !== null && spec.axisName === 'wght' && pos.axisValue === 400;
+          const value = resolveAxisValue(pos.axisValue, axis);
+          if (value === null) continue;
+          const inherit = inheritedDefaultScore !== null && spec.axisName === 'wght' && value === 400;
           scores.push({
-            location: { [spec.axisName]: pos.axisValue },
+            location: { [spec.axisName]: value },
             score: inherit ? inheritedDefaultScore! : pos.score
           });
         }
@@ -170,7 +189,7 @@ function submitVariable() {
           </div>
           <div v-for="(pos, posIdx) in spec.positions" :key="posIdx" class="position-row">
             <label>Axis value:</label>
-            <input type="number" v-model.number="pos.axisValue" style="width: 80px;" />
+            <input type="text" v-model="pos.axisValue" placeholder="number, min, max" style="width: 100px;" />
             <label>Score:</label>
             <input type="number" v-model.number="pos.score" min="0" max="100" style="width: 60px;" />
             <button v-if="spec.positions.length > 2" @click="removePosition(spec, posIdx)">Remove</button>
