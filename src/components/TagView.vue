@@ -17,6 +17,24 @@ onBeforeMount(() => { EventBus.$emit('ensure-loaded', props.tagging?.font.name);
 const removeTagging = () => { props.tagging?.font.removeTagging(props.tagging) }
 const inputValue = (e: Event) => Number((e.target as HTMLInputElement).value);
 
+function removePosition(idx: number) {
+    if (!props.tagging || !('scores' in props.tagging)) return;
+    props.tagging.scores.splice(idx, 1);
+}
+
+function addPosition() {
+    if (!props.tagging || !('scores' in props.tagging)) return;
+    const scores = props.tagging.scores;
+    // Base the new position on the axes already used by this tagging,
+    // seeding each axis at the font's minimum value.
+    const axes = scores.length > 0 ? Object.keys(scores[0].location) : [];
+    const location: Location = {};
+    for (const axis of axes) {
+        location[axis] = props.tagging.font.axis(axis)?.min ?? 0;
+    }
+    scores.push({ location, score: 0 });
+}
+
 const currentLocationIndex = ref(0);
 const editing = ref(false);
 let animationInterval: ReturnType<typeof setInterval> | null = null;
@@ -124,7 +142,10 @@ onBeforeUnmount(() => {
                         @focus="editing = true"
                         @change="entry.score = inputValue($event)"
                         @blur="editing = false" />
+                    <button v-if="props.tagging.scores.length > 1" @click="removePosition(idx)"
+                        class="remove-position-btn">X</button>
                 </div>
+                <button @click="addPosition" class="add-position-btn">+</button>
             </span>
             <button @click="removeTagging" class="remove-tag-btn">Remove</button>
         </div>
