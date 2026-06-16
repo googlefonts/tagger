@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { GF, StaticTagging, VariableTagging } from '../models';
 import type { Axis, Location } from '../models';
 
 interface AxisPosition {
   // A number, or the keywords "min"/"max" which resolve to each font's own axis bounds.
   axisValue: number | string;
-  score: number;
 }
 
 // Resolve a position's axis value against a specific font's axis.
@@ -30,8 +29,11 @@ function makePositions(count: number): AxisPosition[] {
   const n = Math.max(2, Math.floor(count || 2));
   const positions: AxisPosition[] = [];
   for (let i = 0; i < n; i++) {
-    const t = i / (n - 1);
-    positions.push({ axisValue: 0, score: Math.round(t * 100) });
+    // Seed the two extremes with the min/max keywords; interior positions start blank-ish.
+    let axisValue: number | string = 0;
+    if (i === 0) axisValue = 'min';
+    else if (i === n - 1) axisValue = 'max';
+    positions.push({ axisValue });
   }
   return positions;
 }
@@ -52,6 +54,46 @@ const overwriteExisting = ref<boolean>(false);
 const onlyReplaceExisting = ref<boolean>(false);
 const axisSpecs = ref<AxisSpec[]>([]);
 
+// Scores live at the *nodes* of the cross-product grid, not on individual axis
+// positions. Keyed by a tuple of position indices, one per named axis (e.g. "0-1").
+const nodeScores = ref<Record<string, number>>({});
+
+// Only axes that have actually been named participate in the grid.
+const namedSpecs = computed(() => axisSpecs.value.filter(s => s.axisName.trim() !== ''));
+
+interface GridCell { axisName: string; axisValue: number | string; }
+interface GridNode { key: string; cells: GridCell[]; }
+
+// The Cartesian product of every named axis's positions. Each node is one full
+// multi-axis location that needs its own score — e.g. (wdth=75, wght=100).
+const gridNodes = computed<GridNode[]>(() => {
+  const specs = namedSpecs.value;
+  if (specs.length === 0) return [];
+  let combos: { idxs: number[]; cells: GridCell[] }[] = [{ idxs: [], cells: [] }];
+  for (const spec of specs) {
+    const next: { idxs: number[]; cells: GridCell[] }[] = [];
+    spec.positions.forEach((pos, posIdx) => {
+      for (const combo of combos) {
+        next.push({
+          idxs: [...combo.idxs, posIdx],
+          cells: [...combo.cells, { axisName: spec.axisName, axisValue: pos.axisValue }]
+        });
+      }
+    });
+    combos = next;
+  }
+  return combos.map(c => ({ key: c.idxs.join('-'), cells: c.cells }));
+});
+
+function getNodeScore(key: string): number {
+  return nodeScores.value[key] ?? 0;
+}
+
+function setNodeScore(key: string, event: Event) {
+  const v = (event.target as HTMLInputElement).valueAsNumber;
+  nodeScores.value = { ...nodeScores.value, [key]: isNaN(v) ? 0 : v };
+}
+
 function addAxisSpec() {
   axisSpecs.value.push({ axisName: '', positions: makePositions(2) });
 }
@@ -64,7 +106,7 @@ function setPositionCount(spec: AxisSpec, event: Event) {
   const count = (event.target as HTMLInputElement).valueAsNumber;
   const n = Math.max(2, Math.floor(count || 2));
   while (spec.positions.length < n) {
-    spec.positions.push({ axisValue: 0, score: 0 });
+    spec.positions.push({ axisValue: 0 });
   }
   if (spec.positions.length > n) {
     spec.positions.splice(n);
@@ -103,7 +145,7 @@ function submitVariable() {
     if (!tag) continue;
 
     const matchingFamilies = props.gf.families.filter(family => {
-      return axisSpecs.value.every(spec => {
+      return namedSpecs.value.every(spec => {
         const axis = family.axis(spec.axisName);
         if (!axis) return false;
         // "min"/"max" always resolve within range; only explicit numbers can fall outside it.
@@ -134,19 +176,24 @@ function submitVariable() {
       } else if (onlyReplaceExisting.value) {
         continue;
       }
+      // One score entry per grid node, each a full multi-axis location.
       const scores: { location: Location; score: number }[] = [];
-      for (const spec of axisSpecs.value) {
-        const axis = family.axis(spec.axisName);
-        if (!axis) continue;
-        for (const pos of spec.positions) {
-          const value = resolveAxisValue(pos.axisValue, axis);
-          if (value === null) continue;
-          const inherit = inheritedDefaultScore !== null && spec.axisName === 'wght' && value === 400;
-          scores.push({
-            location: { [spec.axisName]: value },
-            score: inherit ? inheritedDefaultScore! : pos.score
-          });
+      for (const node of gridNodes.value) {
+        const location: Location = {};
+        let ok = true;
+        for (const cell of node.cells) {
+          const axis = family.axis(cell.axisName);
+          if (!axis) { ok = false; break; }
+          const value = resolveAxisValue(cell.axisValue, axis);
+          if (value === null) { ok = false; break; }
+          location[cell.axisName] = value;
         }
+        if (!ok) continue;
+        const inherit = inheritedDefaultScore !== null && location['wght'] === 400;
+        scores.push({
+          location,
+          score: inherit ? inheritedDefaultScore! : getNodeScore(node.key)
+        });
       }
       family.taggings.push(new VariableTagging(family, tag, scores));
     }
@@ -190,14 +237,23 @@ function submitVariable() {
           <div v-for="(pos, posIdx) in spec.positions" :key="posIdx" class="position-row">
             <label>Axis value:</label>
             <input type="text" v-model="pos.axisValue" placeholder="number, min, max" style="width: 100px;" />
-            <label>Score:</label>
-            <input type="number" v-model.number="pos.score" min="0" max="100" style="width: 60px;" />
             <button v-if="spec.positions.length > 2" @click="removePosition(spec, posIdx)">Remove</button>
           </div>
         </div>
         <button @click="addAxisSpec">Add axis</button>
+
+        <div v-if="gridNodes.length" class="grid-scores">
+          <h4>Scores per location ({{ gridNodes.length }})</h4>
+          <div v-for="node in gridNodes" :key="node.key" class="grid-node-row">
+            <span class="node-label">
+              <span v-for="(cell, i) in node.cells" :key="cell.axisName">{{ i > 0 ? ', ' : '' }}{{ cell.axisName }}={{ cell.axisValue }}</span>
+            </span>
+            score=<input type="number" min="0" max="100" :value="getNodeScore(node.key)"
+              @input="setNodeScore(node.key, $event)" style="width: 60px;" />
+          </div>
+        </div>
         <br />
-        <button @click="submitVariable" :disabled="selectedCategories.length === 0 || axisSpecs.length === 0">Apply</button>
+        <button @click="submitVariable" :disabled="selectedCategories.length === 0 || gridNodes.length === 0">Apply</button>
       </div>
 
       <hr />
@@ -250,5 +306,27 @@ function submitVariable() {
   align-items: center;
   gap: 8px;
   margin: 4px 0 4px 16px;
+}
+
+.grid-scores {
+  margin-top: 12px;
+  border-top: 1px solid #ddd;
+  padding-top: 8px;
+}
+
+.grid-scores h4 {
+  margin: 0 0 8px;
+}
+
+.grid-node-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.grid-node-row .node-label {
+  min-width: 220px;
+  font-family: monospace;
 }
 </style>
