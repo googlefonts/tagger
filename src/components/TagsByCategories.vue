@@ -26,6 +26,7 @@ const props = defineProps({
 const selectedCategories = ref<string[]>(props.categories);
 const sortBy = ref('family'); // Default sorting option
 const tagFilter = ref('');
+const axisFilter = ref('');
 const reverseTags = ref(false);
 const variableOnly = ref(false);
 const staticOnly = ref(false);
@@ -93,6 +94,10 @@ const filteredTaggings: ComputedRef<Tagging[]> = computed(() => {
     const myRegex = new RegExp(tagFilter.value, "i");
     filtered = filtered.filter(tag => myRegex.test(tag.font.name));
   }
+  if (axisFilter.value !== "") {
+    const axes = axisFilter.value.split(",").map(a => a.trim().toLowerCase()).filter(Boolean);
+    filtered = filtered.filter(t => axes.every(a => t.font.axes.some(ax => ax.tag.toLowerCase() === a)));
+  }
   if (reverseTags.value) {
     filtered.reverse();
   }
@@ -114,7 +119,8 @@ const filteredTaggings: ComputedRef<Tagging[]> = computed(() => {
       <button @click="reverseTags = !reverseTags">
         Reverse Order
       </button>
-      <input type="text" v-model="tagFilter" placeholder="Filter tags by name" />
+      <input type="text" v-model="tagFilter" placeholder="Filter by font name" />
+      <input type="text" v-model="axisFilter" placeholder="Filter by axes (e.g. wght,wdth)" />
       <label><input type="checkbox" v-model="variableOnly" :disabled="staticOnly" /> Variable only</label>
       <label><input type="checkbox" v-model="staticOnly" :disabled="variableOnly" /> Static only</label>
     </div>
