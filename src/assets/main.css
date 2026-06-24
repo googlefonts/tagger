@@ -11,6 +11,7 @@ h1,h2,h3 { margin-top: 0; margin-bottom: 0; }
 .tag-info { color: #007ac0; }
 
 .tag-view { padding: 5px; border: 1px solid #eee; margin-bottom: 10px; }
+.tag-view.touched { background-color: #ffc8b4; }
 .tag-name { display: inline-block; min-width: 200px; font-family: monospace; font-weight: bold; }
 .tag-family { width: 200px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tag-score { padding-left: 20px; color: #888; }

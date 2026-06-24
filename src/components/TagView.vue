@@ -15,11 +15,13 @@ const props = defineProps({
 
 onBeforeMount(() => { EventBus.$emit('ensure-loaded', props.tagging?.font.name); });
 const removeTagging = () => { props.tagging?.font.removeTagging(props.tagging) }
+const markTouched = () => { touched.value = true; }
 const inputValue = (e: Event) => Number((e.target as HTMLInputElement).value);
 
 function removePosition(idx: number) {
     if (!props.tagging || !('scores' in props.tagging)) return;
     props.tagging.scores.splice(idx, 1);
+    markTouched();
 }
 
 function addPosition() {
@@ -33,10 +35,12 @@ function addPosition() {
         location[axis] = props.tagging.font.axis(axis)?.min ?? 0;
     }
     scores.push({ location, score: 0 });
+    markTouched();
 }
 
 const currentLocationIndex = ref(0);
 const editing = ref(false);
+const touched = ref(false);
 let animationInterval: ReturnType<typeof setInterval> | null = null;
 
 // Build cross-product of per-axis values for animation.
@@ -113,7 +117,7 @@ onBeforeUnmount(() => {
 
 
 <template>
-    <div class="tag-view">
+    <div class="tag-view" :class="{ touched }">
         <div class="tag-title">
             <span class="tag-name">{{ props.tagging?.tag.name }}
                 <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -1000 960 960" fill="#000000">
@@ -125,7 +129,7 @@ onBeforeUnmount(() => {
             </span>
             <span class="tag-family">{{ props.tagging?.font.name }}</span>
             <span class="tag-score" v-if="props.tagging && !('scores' in props.tagging)">
-                Score: <input type="number" v-model.lazy="props.tagging.score" style="width: 60px;" />
+                Score: <input type="number" v-model.lazy="props.tagging.score" style="width: 60px;" @change="markTouched" />
             </span>
             <span class="tag-score variable-tag" v-if="props.tagging && 'scores' in props.tagging">
                 Variable tag
@@ -135,12 +139,12 @@ onBeforeUnmount(() => {
                             :min="props.tagging.font.axis(axis)?.min"
                             :max="props.tagging.font.axis(axis)?.max"
                             @focus="editing = true"
-                            @change="entry.location[axis] = inputValue($event)"
+                            @change="entry.location[axis] = inputValue($event); markTouched()"
                             @blur="editing = false" />
                     </span>
                     score=<input type="number" :value="entry.score" style="width: 60px;"
                         @focus="editing = true"
-                        @change="entry.score = inputValue($event)"
+                        @change="entry.score = inputValue($event); markTouched()"
                         @blur="editing = false" />
                     <button v-if="props.tagging.scores.length > 1" @click="removePosition(idx)"
                         class="remove-position-btn">X</button>
