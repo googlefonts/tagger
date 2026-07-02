@@ -133,7 +133,9 @@ function submitStatic() {
       } else if (onlyReplaceExisting.value) {
         continue;
       }
-      family.taggings.push(new StaticTagging(family, tag, placeholderScore.value));
+      const tagging = new StaticTagging(family, tag, placeholderScore.value);
+      tagging.placeholder = true;
+      family.taggings.push(tagging);
     }
   }
   emit('close');
@@ -195,7 +197,9 @@ function submitVariable() {
           score: inherit ? inheritedDefaultScore! : getNodeScore(node.key)
         });
       }
-      family.taggings.push(new VariableTagging(family, tag, scores));
+      const tagging = new VariableTagging(family, tag, scores);
+      tagging.placeholder = true;
+      family.taggings.push(tagging);
     }
   }
   emit('close');
