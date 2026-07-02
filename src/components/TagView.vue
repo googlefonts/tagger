@@ -117,7 +117,7 @@ onBeforeUnmount(() => {
 
 
 <template>
-    <div class="tag-view" :class="{ touched }">
+    <div class="tag-view" :class="{ touched, placeholder: props.tagging?.placeholder }">
         <div class="tag-title">
             <span class="tag-name">{{ props.tagging?.tag.name }}
                 <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -1000 960 960" fill="#000000">
