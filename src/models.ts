@@ -108,10 +108,12 @@ export class StaticTagging {
   font: Font;
   tag: Tag;
   score: number | null;
+  placeholder: boolean;
   constructor(font: Font, tag: Tag, score: number | null) {
     this.font = font;
     this.tag = tag;
     this.score = score;
+    this.placeholder = false;
   }
   toCSV(): string {
     if (this.score === null) {
@@ -126,6 +128,7 @@ export class VariableTagging {
   font: Font; // Optional, can be undefined if not applicable
   tag: Tag;
   scores: { location: Location; score: number }[];
+  placeholder: boolean;
 
   constructor(
     font: Font,
@@ -135,6 +138,7 @@ export class VariableTagging {
     this.font = font;
     this.tag = tag;
     this.scores = scores;
+    this.placeholder = false;
   }
   // Get the score for a specific location
   scoreAt(location: Location): number | undefined {
