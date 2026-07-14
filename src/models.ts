@@ -166,10 +166,11 @@ export class VariableTagging {
   toCSV(): string {
     let csv = "";
     for (let scoreEntry of this.scores) {
+      const sortedKeys = Object.keys(scoreEntry.location).sort();
       let gfStyleLocation =
-        Object.keys(scoreEntry.location).join(",") +
+        sortedKeys.join(",") +
         "@" +
-        Object.values(scoreEntry.location).join(",");
+        sortedKeys.map(k => scoreEntry.location[k]).join(",");
       let quotedLocation = gfStyleLocation.includes(",") ? `"${gfStyleLocation}"` : gfStyleLocation;
       csv += `${this.font.name},${quotedLocation},${this.tag.name},${scoreEntry.score}\n`;
     }
