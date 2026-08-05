@@ -477,7 +477,23 @@ export class GF {
         // Collect variable tag entries keyed by "familyName,tagName"
         const variableEntries: Record<string, { family: Font; tag: Tag; scores: { location: Location; score: number }[] }> = {};
         for (let line of lines) {
-          const [familyName, axisStr, tagName, scoreStr] = line.split(",");
+          // Parse CSV fields respecting quoted values (e.g. "WONK,wdth,wght@1,75,100")
+          const fields: string[] = [];
+          let i = 0;
+          while (i < line.length) {
+            if (line[i] === '"') {
+              const end = line.indexOf('"', i + 1);
+              if (end === -1) { fields.push(line.slice(i + 1)); break; }
+              fields.push(line.slice(i + 1, end));
+              i = end + 2; // skip closing quote and comma
+            } else {
+              const end = line.indexOf(',', i);
+              if (end === -1) { fields.push(line.slice(i)); break; }
+              fields.push(line.slice(i, end));
+              i = end + 1;
+            }
+          }
+          const [familyName, axisStr, tagName, scoreStr] = fields;
           let score: number = parseFloat(scoreStr);
           if (!familyName || !tagName) {
             console.warn(
@@ -496,15 +512,18 @@ export class GF {
             continue;
           }
           if (axisStr && axisStr.includes("@")) {
-            const [axisTag, axisVal] = axisStr.split("@");
+            const [axisNames, axisVals] = axisStr.split("@");
+            const names = axisNames.split(",");
+            const vals = axisVals.split(",");
+            const location: Location = {};
+            for (let j = 0; j < names.length; j++) {
+              location[names[j]] = parseFloat(vals[j]);
+            }
             const key = `${familyName},${tagName}`;
             if (!variableEntries[key]) {
               variableEntries[key] = { family, tag, scores: [] };
             }
-            variableEntries[key].scores.push({
-              location: { [axisTag]: parseFloat(axisVal) },
-              score,
-            });
+            variableEntries[key].scores.push({ location, score });
           } else {
             family.taggings.push(new StaticTagging(family, tag, score));
           }
