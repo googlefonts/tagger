@@ -128,3 +128,9 @@ h1,h2,h3 { margin-top: 0; margin-bottom: 0; }
     margin: 5px;
     border: 1px solid #ddd;
 }
+.vf-tag-grid {
+  margin: 0.5em 0;
+  padding: 0.5em;
+  border: 1px solid #ddd;
+  font-size: 0.9em;
+}

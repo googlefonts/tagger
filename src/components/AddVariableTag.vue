@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Font, GF, VariableTagging } from '@/models';
-import { ref, triggerRef } from 'vue';
+import type { Location } from '@/models';
+import { computed, ref, triggerRef } from 'vue';
 
 // This is different to a VariableTagging, in that we're going to turn a bunch of these
 // into a VariableTagging later using radial basis multiplication.
@@ -10,6 +11,8 @@ type VfTagScore = Record<string, ScoreAtAxisValue[]>;
 const newTagScore = ref<number | null>(null);
 const newVfTagScoreAxis = ref<string | null>(null);
 const newVfTagScores = ref<VfTagScore>({});
+// Scores the user has edited in the multi-axis grid, keyed by location JSON
+const gridOverrides = ref<Record<string, number>>({});
 
 const props = defineProps({
     font: {
@@ -65,6 +68,50 @@ function removeScore(scores: ScoreAtAxisValue[], idx: number) {
 }
 
 
+interface GridPoint { location: Location; key: string; defaultScore: number; }
+
+// With more than one axis, a tagging needs a score at every combination of
+// the per-axis values (e.g. "wdth,wght@75,100"), which is how families.csv
+// stores them. Build that grid, in the font's axis order, and seed each point
+// with the average of the per-axis scores.
+const grid = computed<GridPoint[]>(() => {
+    const chosen = Object.keys(newVfTagScores.value);
+    if (!props.font || chosen.length < 2) return [];
+    const axes = props.font.axes.map(a => a.tag).filter(tag => chosen.includes(tag));
+    let points: { location: Location; scores: number[] }[] = [{ location: {}, scores: [] }];
+    for (const axis of axes) {
+        const next: typeof points = [];
+        for (const point of points) {
+            for (const entry of newVfTagScores.value[axis]) {
+                next.push({
+                    location: { ...point.location, [axis]: entry.value },
+                    scores: [...point.scores, entry.score],
+                });
+            }
+        }
+        points = next;
+    }
+    return points.map(p => ({
+        location: p.location,
+        key: JSON.stringify(p.location),
+        defaultScore: Math.round(p.scores.reduce((a, b) => a + b, 0) / p.scores.length),
+    }));
+});
+
+function gridScore(point: GridPoint): number {
+    return gridOverrides.value[point.key] ?? point.defaultScore;
+}
+
+function setGridScore(point: GridPoint, event: Event) {
+    const value = Number((event.target as HTMLInputElement).value);
+    // Reassign so Vue 2 notices the new key
+    gridOverrides.value = { ...gridOverrides.value, [point.key]: value };
+}
+
+function locationLabel(location: Location): string {
+    return Object.entries(location).map(([axis, val]) => `${axis}=${val}`).join(', ');
+}
+
 function addVariableTag() {
     if (!props.font || !props.newTag || newVfTagScores.value === null) return;
     const tag = props.gf.tags[props.newTag];
@@ -72,14 +119,16 @@ function addVariableTag() {
         console.error("Tag not found:", props.newTag);
         return;
     }
-    // XXX Do something clever with newVfTagScores to turn it into a bunch of VariableTaggings
+    let scores: { location: Location; score: number }[];
     if (Object.keys(newVfTagScores.value).length == 1) {
         // Single axis, easy case
         let axis = Object.keys(newVfTagScores.value)[0];
         let values = Object.values(newVfTagScores.value)[0];
-        let scores = values.map((s) => ({ location: { [axis]: s.value }, score: s.score }));
-        props.font.taggings.push(new VariableTagging(props.font, tag, scores));
+        scores = values.map((s) => ({ location: { [axis]: s.value }, score: s.score }));
+    } else {
+        scores = grid.value.map((p) => ({ location: p.location, score: gridScore(p) }));
     }
+    props.font.taggings.push(new VariableTagging(props.font, tag, scores));
 }
 
 function notReady(): boolean {
@@ -110,6 +159,14 @@ function notReady(): boolean {
                 :value="axis.tag">{{ axis.tag }}</option>
         </select>
         <button @click="addAxis()" :disabled="!newVfTagScoreAxis">Add axis</button>
+        <div v-if="grid.length" class="vf-tag-grid">
+            <div>Score at each location (seeded from the axis scores above, edit as needed):</div>
+            <div v-for="point in grid" :key="point.key">
+                {{ locationLabel(point.location) }}:
+                <input type="number" :value="gridScore(point)" @input="setGridScore(point, $event)" min="0"
+                    max="100" style="width: 60px;" />
+            </div>
+        </div>
         <!-- at least two value/score pairs-->
         <button @click="addVariableTag()" :disabled="notReady()">Add Variable
             Tag</button>
