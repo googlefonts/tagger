@@ -37,6 +37,9 @@ function addFontPanel(font: string) {
 function addTodoPanel() {
   panels.value.push({ type: 'todo' });
 }
+function addUntaggedPanel() {
+  panels.value.push({ type: 'untagged' });
+}
 function addCategoriesPanel(categories: string[]) {
   panels.value.push({
     type: 'categories', categories
@@ -112,6 +115,7 @@ onBeforeMount(async () => {
       <button @click="addFontPanel('Maven Pro')">Tags in font</button>
       <button @click="addCategoriesPanel(['/Expressive/Loud'])">Tags in category</button>
       <button @click="addTodoPanel()">Todo List</button>
+      <button @click="addUntaggedPanel()">Untagged families</button>
       <button @click="gf?.exportTaggings()">Save changes</button>
       <button @click="showPlaceholderDialog = true">Placeholder Tags</button>
       <input type="checkbox" v-model="showUndefined">Show all</input>

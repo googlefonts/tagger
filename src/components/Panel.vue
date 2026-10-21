@@ -11,7 +11,10 @@ type CategoriesPanel = {
 type TodoPanel = {
   type: "todo"; // Type of panel
 };
-export type Panel = FontPanel | CategoriesPanel | TodoPanel; // Union type for panel
+type UntaggedPanel = {
+  type: "untagged"; // Lists families with no tags
+};
+export type Panel = FontPanel | CategoriesPanel | TodoPanel | UntaggedPanel; // Union type for panel
 </script>
 
 <script setup lang="ts">
@@ -57,5 +60,6 @@ onMounted(() => {
     <tags-by-categories v-else-if="panel.type === 'categories'" :categories="panel.categories"
       :gf="gf" :showUndefined="props.showUndefined" :vfDisplayMode="props.vfDisplayMode"></tags-by-categories>
     <todo v-else-if="panel.type === 'todo'" :gf="gf"></todo>
+    <untagged-families v-else-if="panel.type === 'untagged'" :gf="gf"></untagged-families>
   </div>
 </template>
