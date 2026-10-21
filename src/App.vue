@@ -40,6 +40,9 @@ function addTodoPanel() {
 function addUntaggedPanel() {
   panels.value.push({ type: 'untagged' });
 }
+function addUntaggedAxesPanel() {
+  panels.value.push({ type: 'untagged-axes' });
+}
 function addCategoriesPanel(categories: string[]) {
   panels.value.push({
     type: 'categories', categories
@@ -116,6 +119,7 @@ onBeforeMount(async () => {
       <button @click="addCategoriesPanel(['/Expressive/Loud'])">Tags in category</button>
       <button @click="addTodoPanel()">Todo List</button>
       <button @click="addUntaggedPanel()">Untagged families</button>
+      <button @click="addUntaggedAxesPanel()">Untagged axes</button>
       <button @click="gf?.exportTaggings()">Save changes</button>
       <button @click="showPlaceholderDialog = true">Placeholder Tags</button>
       <input type="checkbox" v-model="showUndefined">Show all</input>
