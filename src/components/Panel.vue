@@ -14,7 +14,10 @@ type TodoPanel = {
 type UntaggedPanel = {
   type: "untagged"; // Lists families with no tags
 };
-export type Panel = FontPanel | CategoriesPanel | TodoPanel | UntaggedPanel; // Union type for panel
+type UntaggedAxesPanel = {
+  type: "untagged-axes"; // Lists variable font axes with no variable tag
+};
+export type Panel = FontPanel | CategoriesPanel | TodoPanel | UntaggedPanel | UntaggedAxesPanel; // Union type for panel
 </script>
 
 <script setup lang="ts">
@@ -61,5 +64,6 @@ onMounted(() => {
       :gf="gf" :showUndefined="props.showUndefined" :vfDisplayMode="props.vfDisplayMode"></tags-by-categories>
     <todo v-else-if="panel.type === 'todo'" :gf="gf"></todo>
     <untagged-families v-else-if="panel.type === 'untagged'" :gf="gf"></untagged-families>
+    <untagged-axes v-else-if="panel.type === 'untagged-axes'" :gf="gf"></untagged-axes>
   </div>
 </template>
