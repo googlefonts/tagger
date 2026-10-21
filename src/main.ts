@@ -13,6 +13,7 @@ import TagView from "./components/TagView.vue";
 import TagsByCategories from "./components/TagsByCategories.vue";
 import TagsByFont from "./components/TagsByFont.vue";
 import Todo from "./components/Todo.vue";
+import UntaggedFamilies from "./components/UntaggedFamilies.vue";
 import PlaceholderTagAdder from "./components/PlaceholderTagAdder.vue";
 import vSelect from "vue-select";
 
@@ -26,6 +27,7 @@ Vue.component("tags-by-font", TagsByFont);
 Vue.component("tag-view", TagView);
 Vue.component("compact-tag-view", CompactTagView);
 Vue.component("todo", Todo);
+Vue.component("untagged-families", UntaggedFamilies);
 Vue.component("sample-text", SampleText);
 Vue.component("placeholder-tag-adder", PlaceholderTagAdder);
 
