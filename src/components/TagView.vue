@@ -97,9 +97,26 @@ function styleForLocation(location: Location) {
     return style;
 }
 
-function locationLabel(location: Location) {
-    return Object.entries(location).map(([axis, val]) => `${axis}=${val}`).join(', ');
-}
+// How to lay out a variable tagging: one preview per location in list mode
+// (its score row goes under it), or a single animated preview with all the
+// score rows under it.
+const variableScores = computed(() => {
+    return props.tagging && 'scores' in props.tagging ? props.tagging.scores : [];
+});
+
+interface PreviewGroup { key: string; style: string; indices: number[]; }
+const previewGroups = computed<PreviewGroup[]>(() => {
+    if (!props.tagging || !('scores' in props.tagging)) return [];
+    const scores = props.tagging.scores;
+    if (props.vfDisplayMode === 'animated') {
+        return [{ key: 'animated', style: animatedStyle.value, indices: scores.map((_, idx) => idx) }];
+    }
+    return scores.map((entry, idx) => ({
+        key: String(idx),
+        style: styleForLocation(entry.location),
+        indices: [idx],
+    }));
+});
 
 onBeforeMount(() => {
     if (animationFrames.value.length > 1) {
@@ -133,36 +150,35 @@ onBeforeUnmount(() => {
             </span>
             <span class="tag-score variable-tag" v-if="props.tagging && 'scores' in props.tagging">
                 Variable tag
-                <div v-for="(entry, idx) in props.tagging.scores" :key="idx">
-                    <span v-for="(val, axis) in entry.location" :key="axis">
-                        {{ axis }}=<input type="number" :value="entry.location[axis]" style="width: 70px;"
+            </span>
+            <button @click="removeTagging" class="remove-tag-btn">Remove</button>
+        </div>
+        <div v-if="!props.tagging || !('scores' in props.tagging)" class="text-editor" contenteditable="true" :style="animatedStyle">
+            Hello world
+        </div>
+        <div v-else class="location-list">
+            <div v-for="group in previewGroups" :key="group.key" class="location-entry">
+                <div class="text-editor" contenteditable="true" :style="group.style">
+                    Hello world
+                </div>
+                <div v-for="idx in group.indices" :key="idx" class="location-row">
+                    <span v-for="(val, axis) in variableScores[idx].location" :key="axis">
+                        {{ axis }}=<input type="number" :value="val" style="width: 70px;"
                             :min="props.tagging.font.axis(axis)?.min"
                             :max="props.tagging.font.axis(axis)?.max"
                             @focus="editing = true"
-                            @change="entry.location[axis] = inputValue($event); markTouched()"
+                            @change="variableScores[idx].location[axis] = inputValue($event); markTouched()"
                             @blur="editing = false" />
                     </span>
-                    score=<input type="number" :value="entry.score" style="width: 60px;"
+                    score=<input type="number" :value="variableScores[idx].score" style="width: 60px;"
                         @focus="editing = true"
-                        @change="entry.score = inputValue($event); markTouched()"
+                        @change="variableScores[idx].score = inputValue($event); markTouched()"
                         @blur="editing = false" />
                     <button v-if="props.tagging.scores.length > 1" @click="removePosition(idx)"
                         class="remove-position-btn">X</button>
                 </div>
-                <button @click="addPosition" class="add-position-btn">+</button>
-            </span>
-            <button @click="removeTagging" class="remove-tag-btn">Remove</button>
-        </div>
-        <div v-if="!props.tagging || !('scores' in props.tagging) || props.vfDisplayMode === 'animated'" class="text-editor" contenteditable="true" :style="animatedStyle">
-            Hello world
-        </div>
-        <div v-else class="location-list">
-            <div v-for="(entry, idx) in props.tagging.scores" :key="idx" class="location-entry">
-                <div class="location-label">{{ locationLabel(entry.location) }} (score: {{ entry.score }})</div>
-                <div class="text-editor" contenteditable="true" :style="styleForLocation(entry.location)">
-                    Hello world
-                </div>
             </div>
+            <button @click="addPosition" class="add-position-btn">+ Add location</button>
         </div>
     </div>
 </template>

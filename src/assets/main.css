@@ -139,3 +139,7 @@ h1,h2,h3 { margin-top: 0; margin-bottom: 0; }
 .untagged-list li { display: flex; align-items: center; gap: 0.75em; padding: 0.3em 0; border-bottom: 1px solid #eee; }
 .untagged-name { font-size: 1.4em; flex: 1; }
 .untagged-axes { color: #888; font-size: 0.85em; }
+
+.location-entry { margin-bottom: 6px; }
+.location-row { padding: 3px 5px; font-size: 0.9em; color: #555; }
+.location-row span { margin-right: 8px; }
