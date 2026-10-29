@@ -2,6 +2,7 @@
 import { Font, GF, VariableTagging } from '@/models';
 import type { Location } from '@/models';
 import { computed, ref, triggerRef } from 'vue';
+import type { PropType } from 'vue';
 
 // This is different to a VariableTagging, in that we're going to turn a bunch of these
 // into a VariableTagging later using radial basis multiplication.
@@ -26,6 +27,10 @@ const props = defineProps({
     newTag: {
         type: String,
         required: true
+    },
+    scripts: {
+        type: Array as PropType<string[]>,
+        default: () => []
     }
 });
 
@@ -128,7 +133,7 @@ function addVariableTag() {
     } else {
         scores = grid.value.map((p) => ({ location: p.location, score: gridScore(p) }));
     }
-    props.font.taggings.push(new VariableTagging(props.font, tag, scores));
+    props.font.taggings.push(new VariableTagging(props.font, tag, scores, [...props.scripts]));
 }
 
 function notReady(): boolean {

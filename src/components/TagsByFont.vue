@@ -28,6 +28,7 @@ const props = defineProps({
 const newTag = ref<string | null>(null);
 const newTagScore = ref<number | null>(null);
 const newTagType = ref<'global' | 'variable'>('global');
+const newTagScripts = ref<string[]>([]);
 const fontSize = ref(32);
 
 // Props just gets us started, Vue gets mad at us if we change it during the
@@ -48,6 +49,9 @@ const location = computed(() => {
     return acc;
   }, {} as Record<string, number>);
 });
+
+// Scripts the user can pick for a tagging: only those the font supports
+const scriptOptions = computed(() => selectedFamily.value?.subsets || []);
 
 const similarFamilies = computed(() => {
   return props.gf.similarFamilies(font.value, 10) || [];
@@ -100,7 +104,7 @@ const convertToVariable = (tagging: Tagging) => {
     extremePositions.push({ location: { [axis.tag]: axis.min }, score: tagging.score || 0 });
     extremePositions.push({ location: { [axis.tag]: axis.max }, score: tagging.score || 0 });
   }
-  const newTagging: VariableTagging = new VariableTagging(selectedFamily.value, tagging.tag, extremePositions);
+  const newTagging: VariableTagging = new VariableTagging(selectedFamily.value, tagging.tag, extremePositions, [...tagging.scripts]);
   // Copy over the score as the default value
   selectedFamily.value.removeTagging(tagging);
   selectedFamily.value.addTagging(newTagging);
@@ -131,6 +135,8 @@ const convertToVariable = (tagging: Tagging) => {
         </span>
         <input type="number" v-model="tagging.score" v-if="!('scores' in tagging)"
           @change="EventBus.$emit('update:tags', selectedFamily?.taggings)" />
+        <v-select multiple v-model="tagging.scripts" :options="scriptOptions" placeholder="All scripts"
+          class="inline-block script-select"></v-select>
         <button @click="removeTagging(tagging)">x</button>
         <button @click="convertToVariable(tagging)"
           v-if="selectedFamily?.isVF && !('scores' in tagging)">Variate</button>
@@ -159,13 +165,15 @@ const convertToVariable = (tagging: Tagging) => {
         <template #search="{ attributes, events }">
           <input class="vs__search" :required="true" v-bind="attributes" v-on="events" />
         </template></v-select>
+      scripts: <v-select multiple v-model="newTagScripts" :options="scriptOptions" placeholder="All scripts"
+        class="inline-block script-select"></v-select>
       <!-- a global tag-->
       <div v-if="newTag && newTagType === 'global'">
-        <add-static-tag :font="selectedFamily" :gf="props.gf" :new-tag="newTag" />
+        <add-static-tag :font="selectedFamily" :gf="props.gf" :new-tag="newTag" :scripts="newTagScripts" />
       </div>
 
       <div v-if="newTag && selectedFamily?.isVF && newTagType === 'variable'" class="vf-tag">
-        <add-variable-tag :font="selectedFamily" :gf="props.gf" :new-tag="newTag" />
+        <add-variable-tag :font="selectedFamily" :gf="props.gf" :new-tag="newTag" :scripts="newTagScripts" />
       </div>
     </div>
 

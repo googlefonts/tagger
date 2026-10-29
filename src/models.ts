@@ -100,6 +100,15 @@ export class Tag {
   }
 }
 
+// Scripts are stored in the CSV as a |-delimited list, e.g. "latin|cyrillic"
+export function scriptsToCSV(scripts: string[]): string {
+  return [...scripts].sort().join("|");
+}
+export function scriptsFromCSV(field: string | undefined): string[] {
+  if (!field) return [];
+  return field.split("|").map((s) => s.trim()).filter((s) => s !== "");
+}
+
 // An association between a tag and a font which applies to all parts of the designspace
 export class StaticTagging {
   // The font family this tagging applies to.
@@ -108,18 +117,20 @@ export class StaticTagging {
   font: Font;
   tag: Tag;
   score: number | null;
+  scripts: string[]; // Subsets this tagging applies to; empty means all
   placeholder: boolean;
-  constructor(font: Font, tag: Tag, score: number | null) {
+  constructor(font: Font, tag: Tag, score: number | null, scripts: string[] = []) {
     this.font = font;
     this.tag = tag;
     this.score = score;
+    this.scripts = scripts;
     this.placeholder = false;
   }
   toCSV(): string {
     if (this.score === null) {
       return "";
     }
-    return `${this.font.name},,${this.tag.name},${this.score}\n`;
+    return `${this.font.name},,${this.tag.name},${this.score},${scriptsToCSV(this.scripts)}\n`;
   }
 }
 
@@ -128,16 +139,19 @@ export class VariableTagging {
   font: Font; // Optional, can be undefined if not applicable
   tag: Tag;
   scores: { location: Location; score: number }[];
+  scripts: string[]; // Subsets this tagging applies to; empty means all
   placeholder: boolean;
 
   constructor(
     font: Font,
     tag: Tag,
-    scores: { location: Location; score: number }[]
+    scores: { location: Location; score: number }[],
+    scripts: string[] = []
   ) {
     this.font = font;
     this.tag = tag;
     this.scores = scores;
+    this.scripts = scripts;
     this.placeholder = false;
   }
   // Get the score for a specific location
@@ -172,7 +186,7 @@ export class VariableTagging {
         "@" +
         sortedKeys.map(k => scoreEntry.location[k]).join(",");
       let quotedLocation = gfStyleLocation.includes(",") ? `"${gfStyleLocation}"` : gfStyleLocation;
-      csv += `${this.font.name},${quotedLocation},${this.tag.name},${scoreEntry.score}\n`;
+      csv += `${this.font.name},${quotedLocation},${this.tag.name},${scoreEntry.score},${scriptsToCSV(this.scripts)}\n`;
     }
     return csv;
   }
@@ -189,12 +203,14 @@ export type Exemplars = {
 export class Font {
   name: string;
   axes: Axis[]; // Array of axis objects
+  subsets: string[]; // Scripts the font supports, from the family metadata
   taggings: Tagging[]; // Array to hold taggings
 
-  constructor(name: string, axes: Axis[], taggings: Tagging[] = []) {
+  constructor(name: string, axes: Axis[], taggings: Tagging[] = [], subsets: string[] = []) {
     this.name = name;
     this.axes = axes;
     this.taggings = taggings;
+    this.subsets = subsets;
   }
 
   get isVF() {
@@ -382,7 +398,11 @@ export class GF {
           displayValue: axis.defaultValue, // Default to midpoint
         });
       }
-      const family = new Font(familyName, axes);
+      // "menu" is a subset for the GF website menu, not a script
+      const subsets: string[] = (this.familyData[familyName].subsets || []).filter(
+        (s: string) => s !== "menu"
+      );
+      const family = new Font(familyName, axes, [], subsets);
       this.families.push(family);
     }
   }
@@ -475,7 +495,7 @@ export class GF {
       .then((csvText) => {
         const lines = csvText.split("\n");
         // Collect variable tag entries keyed by "familyName,tagName"
-        const variableEntries: Record<string, { family: Font; tag: Tag; scores: { location: Location; score: number }[] }> = {};
+        const variableEntries: Record<string, { family: Font; tag: Tag; scores: { location: Location; score: number }[]; scripts: string[] }> = {};
         for (let line of lines) {
           // Parse CSV fields respecting quoted values (e.g. "WONK,wdth,wght@1,75,100")
           const fields: string[] = [];
@@ -493,8 +513,9 @@ export class GF {
               i = end + 1;
             }
           }
-          const [familyName, axisStr, tagName, scoreStr] = fields;
+          const [familyName, axisStr, tagName, scoreStr, scriptStr] = fields;
           let score: number = parseFloat(scoreStr);
+          const scripts = scriptsFromCSV(scriptStr);
           if (!familyName || !tagName) {
             console.warn(
               "Skipping line due to missing family name or tag name:",
@@ -519,18 +540,18 @@ export class GF {
             for (let j = 0; j < names.length; j++) {
               location[names[j]] = parseFloat(vals[j]);
             }
-            const key = `${familyName},${tagName}`;
+            const key = `${familyName},${tagName},${scriptsToCSV(scripts)}`;
             if (!variableEntries[key]) {
-              variableEntries[key] = { family, tag, scores: [] };
+              variableEntries[key] = { family, tag, scores: [], scripts };
             }
             variableEntries[key].scores.push({ location, score });
           } else {
-            family.taggings.push(new StaticTagging(family, tag, score));
+            family.taggings.push(new StaticTagging(family, tag, score, scripts));
           }
         }
         // Create VariableTaggings from grouped entries
         for (const entry of Object.values(variableEntries)) {
-          entry.family.taggings.push(new VariableTagging(entry.family, entry.tag, entry.scores));
+          entry.family.taggings.push(new VariableTagging(entry.family, entry.tag, entry.scores, entry.scripts));
         }
       })
       .catch((error) => {

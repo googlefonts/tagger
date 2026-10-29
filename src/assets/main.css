@@ -123,6 +123,7 @@ h1,h2,h3 { margin-top: 0; margin-bottom: 0; }
 
 .undefined { color: #888; }
 .inline-block { display: inline-block; }
+.script-select { min-width: 220px; vertical-align: middle; margin-left: 8px; }
 .vf-tag-axis {
     padding: 5px;
     margin: 5px;
