@@ -398,9 +398,10 @@ export class GF {
           displayValue: axis.defaultValue, // Default to midpoint
         });
       }
-      // "menu" is a subset for the GF website menu, not a script
+      // "menu" is a subset for the GF website menu, not a script, and the
+      // "-ext" subsets are extensions of a script already in the list
       const subsets: string[] = (this.familyData[familyName].subsets || []).filter(
-        (s: string) => s !== "menu"
+        (s: string) => s !== "menu" && !s.endsWith("-ext")
       );
       const family = new Font(familyName, axes, [], subsets);
       this.families.push(family);
