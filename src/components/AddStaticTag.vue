@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Font, GF, StaticTagging } from '@/models';
 import { ref, watch } from 'vue';
+import type { PropType } from 'vue';
 const newTagScore = ref<number | null>(null);
 
 const props = defineProps({
@@ -15,6 +16,10 @@ const props = defineProps({
     newTag: {
         type: String,
         required: true
+    },
+    scripts: {
+        type: Array as PropType<string[]>,
+        default: () => []
     }
 });
 
@@ -32,7 +37,7 @@ function addStaticTag() {
         console.error("Tag not found:", props.newTag);
         return;
     }
-    props.font.taggings.push(new StaticTagging(props.font, tag, newTagScore.value));
+    props.font.taggings.push(new StaticTagging(props.font, tag, newTagScore.value, [...props.scripts]));
 }
 </script>
 

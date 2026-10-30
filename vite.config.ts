@@ -5,8 +5,11 @@ import legacy from "@vitejs/plugin-legacy";
 import vue2 from "@vitejs/plugin-vue2";
 
 // https://vitejs.dev/config/
+// VITE_SCRIPTS=1 builds the script tagging variant, served under /tagger/scripts/
+const scriptTagging = process.env.VITE_SCRIPTS === "1";
+
 export default defineConfig({
-  base: "/tagger/",
+  base: scriptTagging ? "/tagger/scripts/" : "/tagger/",
   plugins: [
     vue2(),
     legacy({
