@@ -6,6 +6,7 @@ import type { Tagging } from './models';
 import type { Panel } from './components/Panel.vue';
 import type { FilterSet } from './components/AddTags.vue';
 import { EventBus } from './eventbus';
+import { SCRIPT_TAGGING } from './config';
 
 let appLoaded = ref(false);
 let showUndefined = ref(false);
@@ -128,6 +129,7 @@ onBeforeMount(async () => {
       </button>
       <label>Commit: <input type="text" v-model.lazy="commitRef" @change="loadFromCommit"
         style="width: 280px; font-family: monospace;" /></label>
+      <span v-if="SCRIPT_TAGGING" class="script-mode">Script tagging: saves to families-scripts.csv</span>
       <placeholder-tag-adder v-if="showPlaceholderDialog" :gf="gf" @close="showPlaceholderDialog = false" />
       <div style="display: flex; flex-direction: row; width: 100vw; min-height: 100vh;">
         <div v-for="(panel, idx) in panels" :key="idx"

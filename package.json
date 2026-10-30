@@ -3,10 +3,12 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
+    "dev:scripts": "VITE_SCRIPTS=1 vite",
     "build": "run-p type-check build-only",
     "preview": "vite preview --port 4173",
     "rebuild-parser": "peggy --dts src/lint_grammar.pegjs --format es",
     "build-only": "vite build",
+    "build:scripts": "VITE_SCRIPTS=1 vite build --outDir dist/scripts",
     "type-check": "vue-tsc --noEmit",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },

@@ -5,6 +5,7 @@ import type { Tagging, Location } from '@/models';
 
 <script setup lang="ts">
 import { EventBus } from '@/eventbus';
+import { SCRIPT_TAGGING } from '@/config';
 import { GF } from '@/models';
 import { StaticTagging } from '@/models';
 import { computed, defineProps, onBeforeMount, onBeforeUpdate, ref } from 'vue';
@@ -135,8 +136,8 @@ const convertToVariable = (tagging: Tagging) => {
         </span>
         <input type="number" v-model="tagging.score" v-if="!('scores' in tagging)"
           @change="EventBus.$emit('update:tags', selectedFamily?.taggings)" />
-        <v-select multiple v-model="tagging.scripts" :options="scriptOptions" placeholder="All scripts"
-          class="inline-block script-select"></v-select>
+        <v-select v-if="SCRIPT_TAGGING" multiple v-model="tagging.scripts" :options="scriptOptions"
+          placeholder="All scripts" class="inline-block script-select"></v-select>
         <button @click="removeTagging(tagging)">x</button>
         <button @click="convertToVariable(tagging)"
           v-if="selectedFamily?.isVF && !('scores' in tagging)">Variate</button>
@@ -165,8 +166,10 @@ const convertToVariable = (tagging: Tagging) => {
         <template #search="{ attributes, events }">
           <input class="vs__search" :required="true" v-bind="attributes" v-on="events" />
         </template></v-select>
-      scripts: <v-select multiple v-model="newTagScripts" :options="scriptOptions" placeholder="All scripts"
-        class="inline-block script-select"></v-select>
+      <template v-if="SCRIPT_TAGGING">
+        scripts: <v-select multiple v-model="newTagScripts" :options="scriptOptions" placeholder="All scripts"
+          class="inline-block script-select"></v-select>
+      </template>
       <!-- a global tag-->
       <div v-if="newTag && newTagType === 'global'">
         <add-static-tag :font="selectedFamily" :gf="props.gf" :new-tag="newTag" :scripts="newTagScripts" />

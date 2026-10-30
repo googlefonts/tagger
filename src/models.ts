@@ -1,6 +1,7 @@
 import { linter } from "./linter";
 import type { LintRule, Severity } from "./linter.js";
 import { loadText, parseCSV } from "./utils";
+import { SCRIPT_TAGGING, TAGS_CSV_PATH } from "./config";
 
 export type Axis = {
   tag: string; // Axis tag, e.g. 'wght'
@@ -100,9 +101,14 @@ export class Tag {
   }
 }
 
-// Scripts are stored in the CSV as a |-delimited list, e.g. "latin|cyrillic"
+// Scripts are stored in the CSV as a |-delimited list, e.g. "latin|cyrillic".
+// The column only exists in the scripts build; the plain build keeps the
+// four-column format of families.csv.
 export function scriptsToCSV(scripts: string[]): string {
   return [...scripts].sort().join("|");
+}
+function scriptsColumn(scripts: string[]): string {
+  return SCRIPT_TAGGING ? `,${scriptsToCSV(scripts)}` : "";
 }
 export function scriptsFromCSV(field: string | undefined): string[] {
   if (!field) return [];
@@ -130,7 +136,7 @@ export class StaticTagging {
     if (this.score === null) {
       return "";
     }
-    return `${this.font.name},,${this.tag.name},${this.score},${scriptsToCSV(this.scripts)}\n`;
+    return `${this.font.name},,${this.tag.name},${this.score}${scriptsColumn(this.scripts)}\n`;
   }
 }
 
@@ -186,7 +192,7 @@ export class VariableTagging {
         "@" +
         sortedKeys.map(k => scoreEntry.location[k]).join(",");
       let quotedLocation = gfStyleLocation.includes(",") ? `"${gfStyleLocation}"` : gfStyleLocation;
-      csv += `${this.font.name},${quotedLocation},${this.tag.name},${scoreEntry.score},${scriptsToCSV(this.scripts)}\n`;
+      csv += `${this.font.name},${quotedLocation},${this.tag.name},${scoreEntry.score}${scriptsColumn(this.scripts)}\n`;
     }
     return csv;
   }
@@ -484,7 +490,7 @@ export class GF {
 
   private _loadTaggingsFromRef(ref: string) {
     this.clearTaggings();
-    const tagsUrl = `https://raw.githubusercontent.com/google/fonts/${ref}/tags/all/families.csv`;
+    const tagsUrl = `https://raw.githubusercontent.com/google/fonts/${ref}/${TAGS_CSV_PATH}`;
     // TODO this approach only works for static tags for now
     fetch(tagsUrl)
       .then((response) => {
@@ -585,7 +591,7 @@ export class GF {
     }
     // Yeah, I guess this is neater than fiddling with octokit
     navigator.clipboard.writeText(csv);
-    let editUrl = `https://github.com/google/fonts/edit/${this.commit}/tags/all/families.csv`;
+    let editUrl = `https://github.com/google/fonts/edit/${this.commit}/${TAGS_CSV_PATH}`;
     if (this.prNumber) {
       editUrl += `?pr=/google/fonts/pull/${this.prNumber}`;
     }
