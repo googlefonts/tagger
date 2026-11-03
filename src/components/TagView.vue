@@ -18,23 +18,121 @@ const removeTagging = () => { props.tagging?.font.removeTagging(props.tagging) }
 const markTouched = () => { touched.value = true; }
 const inputValue = (e: Event) => Number((e.target as HTMLInputElement).value);
 
-function removePosition(idx: number) {
-    if (!props.tagging || !('scores' in props.tagging)) return;
-    props.tagging.scores.splice(idx, 1);
+const variableScores = computed(() => {
+    return props.tagging && 'scores' in props.tagging ? props.tagging.scores : [];
+});
+
+// A multi-axis variable tagging is a grid: one row for every combination
+// of the values on each axis. Rows are added and removed a slice at a time
+// (one axis value, with a row for every combination of the other axes), so
+// the grid stays complete and interpolation between rows stays defined.
+const axisNames = computed(() => {
+    const scores = variableScores.value;
+    return scores.length > 0 ? Object.keys(scores[0].location) : [];
+});
+
+const axisValues = computed<Record<string, number[]>>(() => {
+    const values: Record<string, number[]> = {};
+    for (const axis of axisNames.value) values[axis] = [];
+    for (const entry of variableScores.value) {
+        for (const axis of axisNames.value) {
+            const val = entry.location[axis];
+            if (val !== undefined && !values[axis].includes(val)) values[axis].push(val);
+        }
+    }
+    for (const axis of axisNames.value) values[axis].sort((a, b) => a - b);
+    return values;
+});
+
+const expectedRows = computed(() => {
+    return axisNames.value.reduce((n, axis) => n * axisValues.value[axis].length, 1);
+});
+
+const isCompleteGrid = computed(() => {
+    const scores = variableScores.value;
+    if (scores.length === 0) return true;
+    const keys = new Set(scores.map((entry) => locationKey(entry.location)));
+    return keys.size === scores.length && keys.size === expectedRows.value;
+});
+
+function locationKey(location: Location): string {
+    return axisNames.value.map((axis) => `${axis}=${location[axis]}`).join(',');
+}
+
+// Keep rows in grid order: first axis slowest, values ascending.
+function sortScores() {
+    variableScores.value.sort((a, b) => {
+        for (const axis of axisNames.value) {
+            const diff = a.location[axis] - b.location[axis];
+            if (diff !== 0) return diff;
+        }
+        return 0;
+    });
+}
+
+// Score at `value` on `axis`, read off the rows of one slice by linear
+// interpolation between the two nearest values, or the nearest row's score
+// outside the range the rows cover.
+function interpolate(rows: { location: Location; score: number }[], axis: string, value: number): number {
+    const sorted = [...rows].sort((a, b) => a.location[axis] - b.location[axis]);
+    if (sorted.length === 0) return 0;
+    if (value <= sorted[0].location[axis]) return sorted[0].score;
+    const last = sorted[sorted.length - 1];
+    if (value >= last.location[axis]) return last.score;
+    for (let i = 1; i < sorted.length; i++) {
+        const lo = sorted[i - 1], hi = sorted[i];
+        if (value <= hi.location[axis]) {
+            const t = (value - lo.location[axis]) / (hi.location[axis] - lo.location[axis]);
+            return Math.round(lo.score + t * (hi.score - lo.score));
+        }
+    }
+    return last.score;
+}
+
+const newValue = ref<Record<string, number | null>>({});
+
+function addAxisValue(axis: string) {
+    const value = newValue.value[axis];
+    if (value === null || value === undefined || isNaN(value)) return;
+    if (axisValues.value[axis].includes(value)) return;
+    const scores = variableScores.value;
+    const others = axisNames.value.filter((a) => a !== axis);
+    // One new row per combination of the other axes' values that exists in the rows
+    const combos = new Map<string, Location>();
+    for (const entry of scores) {
+        const combo: Location = {};
+        for (const a of others) combo[a] = entry.location[a];
+        combos.set(JSON.stringify(combo), combo);
+    }
+    for (const combo of combos.values()) {
+        const slice = scores.filter((entry) => others.every((a) => entry.location[a] === combo[a]));
+        const location: Location = {};
+        for (const a of axisNames.value) location[a] = a === axis ? value : combo[a];
+        scores.push({ location, score: interpolate(slice, axis, value) });
+    }
+    sortScores();
+    newValue.value = { ...newValue.value, [axis]: null };
     markTouched();
 }
 
-function addPosition() {
-    if (!props.tagging || !('scores' in props.tagging)) return;
-    const scores = props.tagging.scores;
-    // Base the new position on the axes already used by this tagging,
-    // seeding each axis at the font's minimum value.
-    const axes = scores.length > 0 ? Object.keys(scores[0].location) : [];
-    const location: Location = {};
-    for (const axis of axes) {
-        location[axis] = props.tagging.font.axis(axis)?.min ?? 0;
+function removeAxisValue(axis: string, value: number) {
+    if (axisValues.value[axis].length <= 1) return;
+    const scores = variableScores.value;
+    for (let i = scores.length - 1; i >= 0; i--) {
+        if (scores[i].location[axis] === value) scores.splice(i, 1);
     }
-    scores.push({ location, score: 0 });
+    markTouched();
+}
+
+function renameAxisValue(axis: string, oldValue: number, e: Event) {
+    const input = e.target as HTMLInputElement;
+    const value = Number(input.value);
+    if (input.value === '' || isNaN(value) || value === oldValue) { input.value = String(oldValue); return; }
+    if (axisValues.value[axis].includes(value)) { input.value = String(oldValue); return; }
+    for (const entry of variableScores.value) {
+        if (entry.location[axis] === oldValue) entry.location[axis] = value;
+    }
+    sortScores();
     markTouched();
 }
 
@@ -100,10 +198,6 @@ function styleForLocation(location: Location) {
 // How to lay out a variable tagging: one preview per location in list mode
 // (its score row goes under it), or a single animated preview with all the
 // score rows under it.
-const variableScores = computed(() => {
-    return props.tagging && 'scores' in props.tagging ? props.tagging.scores : [];
-});
-
 interface PreviewGroup { key: string; style: string; indices: number[]; }
 const previewGroups = computed<PreviewGroup[]>(() => {
     if (!props.tagging || !('scores' in props.tagging)) return [];
@@ -157,28 +251,48 @@ onBeforeUnmount(() => {
             Hello world
         </div>
         <div v-else class="location-list">
+            <div class="axis-values">
+                <div v-for="axis in axisNames" :key="axis" class="axis-values-row">
+                    <span class="axis-values-label">{{ axis }}</span>
+                    <span v-for="val in axisValues[axis]" :key="val" class="axis-value">
+                        <input type="number" :value="val" style="width: 70px;"
+                            :min="props.tagging.font.axis(axis)?.min"
+                            :max="props.tagging.font.axis(axis)?.max"
+                            @focus="editing = true"
+                            @change="renameAxisValue(axis, val, $event)"
+                            @blur="editing = false" />
+                        <button @click="removeAxisValue(axis, val)" :disabled="axisValues[axis].length <= 1"
+                            class="remove-value-btn" title="Remove this value and its rows">×</button>
+                    </span>
+                    <span class="axis-value-add">
+                        <input type="number" v-model.number="newValue[axis]" placeholder="new" style="width: 70px;"
+                            :min="props.tagging.font.axis(axis)?.min"
+                            :max="props.tagging.font.axis(axis)?.max"
+                            @focus="editing = true"
+                            @keyup.enter="addAxisValue(axis)"
+                            @blur="editing = false" />
+                        <button @click="addAxisValue(axis)" class="add-value-btn">Add</button>
+                    </span>
+                </div>
+                <div v-if="!isCompleteGrid" class="grid-warning">
+                    Rows do not form a complete grid: {{ variableScores.length }} rows for
+                    {{ expectedRows }} combinations of axis values.
+                </div>
+            </div>
             <div v-for="group in previewGroups" :key="group.key" class="location-entry">
                 <div class="text-editor" contenteditable="true" :style="group.style">
                     Hello world
                 </div>
                 <div v-for="idx in group.indices" :key="idx" class="location-row">
                     <span v-for="(val, axis) in variableScores[idx].location" :key="axis">
-                        {{ axis }}=<input type="number" :value="val" style="width: 70px;"
-                            :min="props.tagging.font.axis(axis)?.min"
-                            :max="props.tagging.font.axis(axis)?.max"
-                            @focus="editing = true"
-                            @change="variableScores[idx].location[axis] = inputValue($event); markTouched()"
-                            @blur="editing = false" />
+                        {{ axis }}={{ val }}
                     </span>
                     score=<input type="number" :value="variableScores[idx].score" style="width: 60px;"
                         @focus="editing = true"
                         @change="variableScores[idx].score = inputValue($event); markTouched()"
                         @blur="editing = false" />
-                    <button v-if="props.tagging.scores.length > 1" @click="removePosition(idx)"
-                        class="remove-position-btn">X</button>
                 </div>
             </div>
-            <button @click="addPosition" class="add-position-btn">+ Add location</button>
         </div>
     </div>
 </template>

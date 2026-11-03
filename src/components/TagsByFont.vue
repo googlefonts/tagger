@@ -100,11 +100,18 @@ const addToFamily = (tagging: Tagging) => {
 
 const convertToVariable = (tagging: Tagging) => {
   if (!selectedFamily.value?.isVF) return;
-  let extremePositions: { location: Location, score: number }[] = [];
+  // One row for every corner of the designspace, so multi-axis tags form
+  // a complete grid
+  let corners: Location[] = [{}];
   for (let axis of selectedFamily.value.axes) {
-    extremePositions.push({ location: { [axis.tag]: axis.min }, score: tagging.score || 0 });
-    extremePositions.push({ location: { [axis.tag]: axis.max }, score: tagging.score || 0 });
+    const next: Location[] = [];
+    for (const corner of corners) {
+      next.push({ ...corner, [axis.tag]: axis.min });
+      next.push({ ...corner, [axis.tag]: axis.max });
+    }
+    corners = next;
   }
+  const extremePositions = corners.map((location) => ({ location, score: tagging.score || 0 }));
   const newTagging: VariableTagging = new VariableTagging(selectedFamily.value, tagging.tag, extremePositions, [...tagging.scripts]);
   // Copy over the score as the default value
   selectedFamily.value.removeTagging(tagging);
