@@ -5,7 +5,7 @@ import type { Tagging, Location } from '@/models';
 
 <script setup lang="ts">
 import { EventBus } from '@/eventbus';
-import { SCRIPT_TAGGING } from '@/config';
+import { SCRIPT_TAGGING, LINT_RULES } from '@/config';
 import { GF } from '@/models';
 import { StaticTagging } from '@/models';
 import { computed, defineProps, onBeforeMount, onBeforeUpdate, ref } from 'vue';
@@ -59,7 +59,7 @@ const similarFamilies = computed(() => {
 });
 
 const lintErrors = computed(() => {
-  if (!selectedFamily.value) return [];
+  if (!LINT_RULES || !selectedFamily.value) return [];
   return props.gf.linter(props.gf.lintRules, selectedFamily.value) || [];
 });
 

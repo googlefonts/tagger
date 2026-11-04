@@ -9,3 +9,8 @@ export const SCRIPT_TAGGING = import.meta.env.VITE_SCRIPTS === "1";
 export const TAGS_CSV_PATH = SCRIPT_TAGGING
   ? "tags/all/families-scripts.csv"
   : "tags/all/families.csv";
+
+// The tag lint rules in public/tag_rules.csv no longer parse, so they are
+// off until they are fixed. Set to true to load them and show the
+// Warnings section in the font view again.
+export const LINT_RULES = false;

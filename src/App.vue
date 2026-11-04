@@ -6,7 +6,7 @@ import type { Tagging } from './models';
 import type { Panel } from './components/Panel.vue';
 import type { FilterSet } from './components/AddTags.vue';
 import { EventBus } from './eventbus';
-import { SCRIPT_TAGGING } from './config';
+import { SCRIPT_TAGGING, LINT_RULES } from './config';
 
 let appLoaded = ref(false);
 let showUndefined = ref(false);
@@ -75,7 +75,7 @@ function updateTags(newTags: any) {
 onBeforeMount(async () => {
   gf.value = new GF();
   await gf.value.getFamilyData();
-  await gf.value.getLintRules();
+  if (LINT_RULES) await gf.value.getLintRules();
   await gf.value.getTagDefinitions();
   gf.value.loadFamilies();
   gf.value.loadTaggings();
