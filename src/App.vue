@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ComputedRef } from 'vue';
 import { onBeforeMount, ref, computed } from 'vue';
-import { GF, Font, VariableTagging } from './models';
+import { GF, Font } from './models';
 import type { Tagging } from './models';
 import type { Panel } from './components/Panel.vue';
 import type { FilterSet } from './components/AddTags.vue';
@@ -79,19 +79,6 @@ onBeforeMount(async () => {
   await gf.value.getTagDefinitions();
   gf.value.loadFamilies();
   gf.value.loadTaggings();
-  const family = gf.value.families.find(f => f.name === 'Maven Pro');
-  if (!family) {
-    console.error("Family 'Maven Pro' not found");
-  } else {
-    family.taggings.push(new VariableTagging(
-      family,
-      gf.value.tags['/Purpose/Easy Reading'],
-      [
-        { location: { "wght": 400 }, score: 10 },
-        { location: { "wght": 900 }, score: 100 }
-      ]
-    ));
-  }
 
   // Subscribe to events
   EventBus.$on('ensure-loaded', (family: string) => {
