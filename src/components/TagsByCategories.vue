@@ -30,6 +30,16 @@ const axisFilter = ref('');
 const reverseTags = ref(false);
 const variableOnly = ref(false);
 const staticOnly = ref(false);
+const scriptFilter = ref<string[]>([]);
+
+// Every script any font supports, from the family metadata subsets
+const scriptOptions = computed(() => {
+  const scripts = new Set<string>();
+  for (const family of props.gf.families) {
+    for (const script of family.subsets) scripts.add(script);
+  }
+  return [...scripts].sort();
+});
 
 const unappliedTaggings: ComputedRef<Tagging[]> = computed(() => {
   if (!selectedCategories.value) return [];
@@ -98,6 +108,10 @@ const filteredTaggings: ComputedRef<Tagging[]> = computed(() => {
     const axes = axisFilter.value.split(",").map(a => a.trim().toLowerCase()).filter(Boolean);
     filtered = filtered.filter(t => axes.every(a => t.font.axes.some(ax => ax.tag.toLowerCase() === a)));
   }
+  if (scriptFilter.value.length > 0) {
+    // Keep fonts that support any of the chosen scripts
+    filtered = filtered.filter(t => scriptFilter.value.some(s => t.font.subsets.includes(s)));
+  }
   if (reverseTags.value) {
     filtered.reverse();
   }
@@ -121,6 +135,8 @@ const filteredTaggings: ComputedRef<Tagging[]> = computed(() => {
       </button>
       <input type="text" v-model="tagFilter" placeholder="Filter by font name" />
       <input type="text" v-model="axisFilter" placeholder="Filter by axes (e.g. wght,wdth)" />
+      <v-select multiple v-model="scriptFilter" :options="scriptOptions" placeholder="Filter by script"
+        class="inline-block script-select"></v-select>
       <label><input type="checkbox" v-model="variableOnly" :disabled="staticOnly" /> Variable only</label>
       <label><input type="checkbox" v-model="staticOnly" :disabled="variableOnly" /> Static only</label>
     </div>
