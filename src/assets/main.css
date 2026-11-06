@@ -125,6 +125,9 @@ h1,h2,h3 { margin-top: 0; margin-bottom: 0; }
 .inline-block { display: inline-block; }
 .script-select { min-width: 220px; vertical-align: middle; margin-left: 8px; }
 .sample-text-input { width: 320px; margin-left: 8px; }
+.tag-scripts { padding: 2px 5px 4px; font-size: 0.9em; color: #555; }
+.tag-scripts-label { display: inline-block; min-width: 200px; margin-right: 12px; }
+.tag-duplicate .script-select { min-width: 180px; }
 .script-mode { margin-left: 8px; padding: 2px 8px; background: #fde68a; border-radius: 4px; font-weight: bold; }
 .vf-tag-axis {
     padding: 5px;
