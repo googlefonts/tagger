@@ -11,7 +11,14 @@ const props = defineProps({
         type: String as PropType<'animated' | 'list'>,
         default: 'animated',
     },
+    // Text shown in the previews; the category view sets it for every tag at once
+    sampleText: {
+        type: String,
+        default: '',
+    },
 });
+
+const previewText = computed(() => props.sampleText.trim() || 'Hello world');
 
 onBeforeMount(() => { EventBus.$emit('ensure-loaded', props.tagging?.font.name); });
 const removeTagging = () => { props.tagging?.font.removeTagging(props.tagging) }
@@ -248,7 +255,7 @@ onBeforeUnmount(() => {
             <button @click="removeTagging" class="remove-tag-btn">Remove</button>
         </div>
         <div v-if="!props.tagging || !('scores' in props.tagging)" class="text-editor" contenteditable="true" :style="animatedStyle">
-            Hello world
+            {{ previewText }}
         </div>
         <div v-else class="location-list">
             <div class="axis-values">
@@ -281,7 +288,7 @@ onBeforeUnmount(() => {
             </div>
             <div v-for="group in previewGroups" :key="group.key" class="location-entry">
                 <div class="text-editor" contenteditable="true" :style="group.style">
-                    Hello world
+                    {{ previewText }}
                 </div>
                 <div v-for="idx in group.indices" :key="idx" class="location-row">
                     <span v-for="(val, axis) in variableScores[idx].location" :key="axis">
