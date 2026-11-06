@@ -142,7 +142,7 @@ const filteredTaggings: ComputedRef<Tagging[]> = computed(() => {
       <label><input type="checkbox" v-model="staticOnly" :disabled="variableOnly" /> Static only</label>
       <input type="text" v-model="sampleText" placeholder="Sample text for all previews" class="sample-text-input" />
     </div>
-    <div v-for="tagging in filteredTaggings" :key="tagging.font.name + tagging.tag.name">
+    <div v-for="tagging in filteredTaggings" :key="tagging.font.name + tagging.tag.name + tagging.scripts.join('|')">
       <tag-view :tagging="tagging" :vfDisplayMode="props.vfDisplayMode" :sampleText="sampleText"></tag-view>
     </div>
   </div>

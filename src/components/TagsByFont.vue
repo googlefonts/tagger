@@ -129,7 +129,7 @@ const convertToVariable = (tagging: Tagging) => {
     </div>
     <sample-text :font="selectedFamily" :fontSize="fontSize" />
     <ul>
-      <li v-for="tagging in selectedFamily?.taggings" :key="tagging.tag.name + selectedFamily?.name">
+      <li v-for="tagging in selectedFamily?.taggings" :key="tagging.tag.name + selectedFamily?.name + tagging.scripts.join('|')">
         <span class="tag-name">{{ tagging.tag.name }}
           <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -1000 960 960" width="24px" fill="#000000">
             <path

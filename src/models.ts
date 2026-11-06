@@ -244,8 +244,17 @@ export class Font {
     });
   }
 
+  // A font can carry the same tag more than once when the taggings apply to
+  // different scripts, e.g. /Expressive/Calm for latin and again for arabic.
+  hasTaggingForScripts(tagName: string, scripts: string[]): boolean {
+    const key = scriptsToCSV(scripts);
+    return this.taggings.some((tagging) => {
+      return tagging.tag.name === tagName && scriptsToCSV(tagging.scripts) === key;
+    });
+  }
+
   addTagging(tagging: Tagging) {
-    if (this.hasTagging(tagging.tag.name)) {
+    if (this.hasTaggingForScripts(tagging.tag.name, tagging.scripts)) {
       console.warn(
         `Tagging for tag ${tagging.tag.name} already exists in family ${this.name}.`
       );

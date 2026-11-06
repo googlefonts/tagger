@@ -2,7 +2,9 @@
 import { onBeforeMount, onBeforeUnmount, ref, computed } from 'vue';
 import type { PropType } from 'vue';
 import type { Tagging, Location } from '../models';
+import { StaticTagging, VariableTagging } from '../models';
 import { EventBus } from '@/eventbus';
+import { SCRIPT_TAGGING } from '@/config';
 
 const props = defineProps({
     tagging: Object as PropType<Tagging>,
@@ -143,6 +145,35 @@ function renameAxisValue(axis: string, oldValue: number, e: Event) {
     markTouched();
 }
 
+// Script tagging: copy this tagging, scores and all, for another set of
+// scripts on the same font. The copy is a separate tagging the user can
+// then score differently.
+const duplicateScripts = ref<string[]>([]);
+const scriptOptions = computed(() => props.tagging?.font.subsets ?? []);
+const scriptsLabel = computed(() => {
+    const scripts = props.tagging?.scripts ?? [];
+    return scripts.length > 0 ? scripts.join(', ') : 'All scripts';
+});
+const duplicateExists = computed(() => {
+    if (!props.tagging || duplicateScripts.value.length === 0) return false;
+    return props.tagging.font.hasTaggingForScripts(props.tagging.tag.name, duplicateScripts.value);
+});
+
+function duplicateForScripts() {
+    const tagging = props.tagging;
+    if (!tagging || duplicateScripts.value.length === 0 || duplicateExists.value) return;
+    const scripts = [...duplicateScripts.value].sort();
+    let copy: Tagging;
+    if ('scores' in tagging) {
+        const scores = tagging.scores.map((entry) => ({ location: { ...entry.location }, score: entry.score }));
+        copy = new VariableTagging(tagging.font, tagging.tag, scores, scripts);
+    } else {
+        copy = new StaticTagging(tagging.font, tagging.tag, tagging.score, scripts);
+    }
+    tagging.font.addTagging(copy);
+    duplicateScripts.value = [];
+}
+
 const currentLocationIndex = ref(0);
 const editing = ref(false);
 const touched = ref(false);
@@ -253,6 +284,17 @@ onBeforeUnmount(() => {
                 Variable tag
             </span>
             <button @click="removeTagging" class="remove-tag-btn">Remove</button>
+        </div>
+        <div v-if="SCRIPT_TAGGING && props.tagging" class="tag-scripts">
+            <span class="tag-scripts-label">Scripts: {{ scriptsLabel }}</span>
+            <span class="tag-duplicate">
+                Duplicate for
+                <v-select multiple v-model="duplicateScripts" :options="scriptOptions" placeholder="scripts"
+                    class="inline-block script-select"></v-select>
+                <button @click="duplicateForScripts" :disabled="duplicateScripts.length === 0 || duplicateExists"
+                    :title="duplicateExists ? 'This font already has this tag for those scripts' : ''"
+                    class="duplicate-btn">Duplicate</button>
+            </span>
         </div>
         <div v-if="!props.tagging || !('scores' in props.tagging)" class="text-editor" contenteditable="true" :style="animatedStyle">
             {{ previewText }}
