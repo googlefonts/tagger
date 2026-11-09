@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { GF, StaticTagging, VariableTagging } from '../models';
-import type { Axis, Location } from '../models';
+import { GF, StaticTagging, VariableTagging, scriptsToCSV } from '../models';
+import type { Axis, Location, Font, Tagging } from '../models';
+import { SCRIPT_TAGGING } from '../config';
 
 interface AxisPosition {
   // A number, or the keywords "min"/"max" which resolve to each font's own axis bounds.
@@ -53,6 +54,30 @@ const placeholderScore = ref<number>(0);
 const overwriteExisting = ref<boolean>(false);
 const onlyReplaceExisting = ref<boolean>(false);
 const axisSpecs = ref<AxisSpec[]>([]);
+
+// Scripts build only: the scripts the placeholder taggings are for. Empty means "all scripts".
+const selectedScripts = ref<string[]>([]);
+const scriptOptions = computed(() => {
+  const all = new Set<string>();
+  for (const family of props.gf.families) {
+    for (const s of family.subsets) all.add(s);
+  }
+  return [...all].sort();
+});
+
+// A family gets a placeholder only if it supports every selected script.
+function supportsScripts(family: Font): boolean {
+  return selectedScripts.value.every(s => family.subsets.includes(s));
+}
+
+// The tagging a new placeholder would replace: same tag, and in the scripts
+// build the same scripts, so a script-specific placeholder can sit beside the
+// all-scripts tagging of the same category.
+function findExisting(family: Font, categoryName: string): Tagging | undefined {
+  const key = scriptsToCSV(selectedScripts.value);
+  return family.taggings.find(t =>
+    t.tag.name === categoryName && (!SCRIPT_TAGGING || scriptsToCSV(t.scripts) === key));
+}
 
 // Scores live at the *nodes* of the cross-product grid, not on individual axis
 // positions. Keyed by a tuple of position indices, one per named axis (e.g. "0-1").
@@ -123,17 +148,18 @@ function submitStatic() {
     const tag = props.gf.tags[categoryName];
     if (!tag) continue;
     for (const family of props.gf.families) {
-      if (family.hasTagging(categoryName)) {
+      if (!supportsScripts(family)) continue;
+      const existing = findExisting(family, categoryName);
+      if (existing) {
         if (onlyReplaceExisting.value || overwriteExisting.value) {
-          const existing = family.taggings.find(t => t.tag.name === categoryName);
-          if (existing) family.removeTagging(existing);
+          family.removeTagging(existing);
         } else {
           continue;
         }
       } else if (onlyReplaceExisting.value) {
         continue;
       }
-      const tagging = new StaticTagging(family, tag, placeholderScore.value);
+      const tagging = new StaticTagging(family, tag, placeholderScore.value, [...selectedScripts.value].sort());
       tagging.placeholder = true;
       family.taggings.push(tagging);
     }
@@ -147,6 +173,7 @@ function submitVariable() {
     if (!tag) continue;
 
     const matchingFamilies = props.gf.families.filter(family => {
+      if (!supportsScripts(family)) return false;
       return namedSpecs.value.every(spec => {
         const axis = family.axis(spec.axisName);
         if (!axis) return false;
@@ -163,15 +190,13 @@ function submitVariable() {
       // If we're replacing a static tagging, inherit its score at the default
       // location (wght=400) so the variable tagging keeps the existing value there.
       let inheritedDefaultScore: number | null = null;
-      if (family.hasTagging(categoryName)) {
+      const existing = findExisting(family, categoryName);
+      if (existing) {
         if (onlyReplaceExisting.value || overwriteExisting.value) {
-          const existing = family.taggings.find(t => t.tag.name === categoryName);
-          if (existing) {
-            if (existing instanceof StaticTagging && existing.score !== null) {
-              inheritedDefaultScore = existing.score;
-            }
-            family.removeTagging(existing);
+          if (existing instanceof StaticTagging && existing.score !== null) {
+            inheritedDefaultScore = existing.score;
           }
+          family.removeTagging(existing);
         } else {
           continue;
         }
@@ -197,7 +222,7 @@ function submitVariable() {
           score: inherit ? inheritedDefaultScore! : getNodeScore(node.key)
         });
       }
-      const tagging = new VariableTagging(family, tag, scores);
+      const tagging = new VariableTagging(family, tag, scores, [...selectedScripts.value].sort());
       tagging.placeholder = true;
       family.taggings.push(tagging);
     }
@@ -218,6 +243,15 @@ function submitVariable() {
 
       <h4>Categories</h4>
       <v-select v-model="selectedCategories" multiple :options="gf.uniqueTagNames().sort()"></v-select>
+
+      <template v-if="SCRIPT_TAGGING">
+        <h4>Scripts</h4>
+        <v-select v-model="selectedScripts" multiple :options="scriptOptions" placeholder="All scripts"></v-select>
+        <p class="hint">
+          Leave empty for all scripts. With scripts selected, only families that support every
+          selected script get a placeholder, tagged for those scripts.
+        </p>
+      </template>
 
       <label><input type="checkbox" v-model="overwriteExisting" :disabled="onlyReplaceExisting" /> Overwrite existing tags</label>
       <label><input type="checkbox" v-model="onlyReplaceExisting" /> Only replace existing tags</label>
@@ -267,6 +301,12 @@ function submitVariable() {
 </template>
 
 <style scoped>
+.hint {
+  margin: 4px 0 8px;
+  font-size: 0.85em;
+  color: #555;
+}
+
 .placeholder-dialog-overlay {
   position: fixed;
   top: 0;
