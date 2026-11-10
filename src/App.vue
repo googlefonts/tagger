@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ComputedRef } from 'vue';
-import { onBeforeMount, ref, computed } from 'vue';
+import { onBeforeMount, ref, computed, nextTick } from 'vue';
 import { GF, Font } from './models';
 import type { Tagging } from './models';
 import type { Panel } from './components/Panel.vue';
@@ -51,6 +51,17 @@ function addCategoriesPanel(categories: string[]) {
   });
 }
 function removePanel(idx: number) { panels.value.splice(idx, 1); }
+// After Start script tagging: three views of the category. Panels are keyed by
+// index, so clear them first to get fresh views instead of reused ones.
+async function startScriptTagging({ script, category }: { script: string; category: string }) {
+  panels.value = [];
+  await nextTick();
+  panels.value = [
+    { type: 'categories', categories: [category], sortBy: 'score', scriptFilter: [script], placeholdersOnly: true },
+    { type: 'categories', categories: [category], sortBy: 'family', scriptFilter: [script] },
+    { type: 'categories', categories: [category], sortBy: 'score' },
+  ];
+}
 function shiftLeft(idx: number) {
   if (idx > 0) {
     const panel = panels.value.splice(idx, 1)[0];
@@ -120,7 +131,7 @@ onBeforeMount(async () => {
         style="width: 280px; font-family: monospace;" /></label>
       <span v-if="SCRIPT_TAGGING" class="script-mode">Script tagging: saves to families-scripts.csv</span>
       <placeholder-tag-adder v-if="showPlaceholderDialog" :gf="gf" @close="showPlaceholderDialog = false" />
-      <script-starter v-if="showScriptStarter" :gf="gf" @close="showScriptStarter = false" />
+      <script-starter v-if="showScriptStarter" :gf="gf" @start="startScriptTagging" @close="showScriptStarter = false" />
       <div style="display: flex; flex-direction: row; width: 100vw; min-height: 100vh;">
         <div v-for="(panel, idx) in panels" :key="idx"
           :style="{ flex: '1 1 0', minWidth: 0, borderRight: idx < panels.length - 1 ? '1px solid #eee' : 'none', height: '100vh', overflow: 'auto' }">

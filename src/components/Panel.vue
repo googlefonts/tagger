@@ -6,7 +6,10 @@ type FontPanel = {
 type CategoriesPanel = {
   type: "categories"; // Type of panel
   categories: string[]; // Array of category names
-  // tagGroups: FontTagGroup[]; // Array of FontTagGroup objects
+  // Optional initial state of the view's controls
+  sortBy?: string;
+  scriptFilter?: string[];
+  placeholdersOnly?: boolean;
 };
 type TodoPanel = {
   type: "todo"; // Type of panel
@@ -61,6 +64,7 @@ onMounted(() => {
     <tags-by-font v-if="panel.type === 'font'" :font="panel.font" :gf="gf"
       :showUndefined="props.showUndefined" :vfDisplayMode="props.vfDisplayMode"></tags-by-font>
     <tags-by-categories v-else-if="panel.type === 'categories'" :categories="panel.categories"
+      :initialSortBy="panel.sortBy" :initialScriptFilter="panel.scriptFilter" :initialPlaceholdersOnly="panel.placeholdersOnly"
       :gf="gf" :showUndefined="props.showUndefined" :vfDisplayMode="props.vfDisplayMode"></tags-by-categories>
     <todo v-else-if="panel.type === 'todo'" :gf="gf"></todo>
     <untagged-families v-else-if="panel.type === 'untagged'" :gf="gf"></untagged-families>

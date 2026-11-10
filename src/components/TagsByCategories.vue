@@ -20,18 +20,31 @@ const props = defineProps({
   vfDisplayMode: {
     type: String as () => 'animated' | 'list',
     default: 'animated'
+  },
+  // Initial state of the controls, for panels opened with a preset
+  initialSortBy: {
+    type: String,
+    default: 'family'
+  },
+  initialScriptFilter: {
+    type: Array as () => string[],
+    default: () => []
+  },
+  initialPlaceholdersOnly: {
+    type: Boolean,
+    default: false
   }
 });
 
 const selectedCategories = ref<string[]>(props.categories);
-const sortBy = ref('family'); // Default sorting option
+const sortBy = ref(props.initialSortBy);
 const tagFilter = ref('');
 const axisFilter = ref('');
 const reverseTags = ref(false);
 const variableOnly = ref(false);
 const staticOnly = ref(false);
-const scriptFilter = ref<string[]>([]);
-const placeholdersOnly = ref(false);
+const scriptFilter = ref<string[]>([...props.initialScriptFilter]);
+const placeholdersOnly = ref(props.initialPlaceholdersOnly);
 const sampleText = ref('');
 
 // Every script any font supports, from the family metadata subsets

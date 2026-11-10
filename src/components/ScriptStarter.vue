@@ -3,9 +3,10 @@ import { ref, computed } from 'vue';
 import { GF, StaticTagging, VariableTagging } from '../models';
 import type { Font, Location, Tagging } from '../models';
 
-// Scripts build only. One dialog to set up a tagger for a script: every family
-// that supports the script gets a 0-score placeholder for each chosen category,
-// tagged for that script. Families with a wght axis get a variable placeholder
+// Scripts build only. One dialog to set up a tagger for a script and category:
+// every family that supports the script gets a 0-score placeholder for the
+// category, tagged for that script, and the view changes to three category
+// panels for the work. Families with a wght axis get a variable placeholder
 // at the wght extremes, crossed with the wdth extremes when the family has wdth.
 // Everything else gets a static placeholder. A family that already has any
 // tagging for the category, for all scripts or for this one, gets nothing: the
@@ -19,15 +20,15 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['close']);
-
-// The categories a script tagger starts with. Change the prefixes to widen the set.
-const DEFAULT_CATEGORY_PREFIXES = ['/Expressive/', '/Quality/'];
+const emit = defineEmits<{
+  (e: 'close'): void;
+  (e: 'start', payload: { script: string; category: string }): void;
+}>();
 
 const script = ref<string | null>(null);
-const categories = ref<string[]>(
-  props.gf.uniqueTagNames().filter(name => DEFAULT_CATEGORY_PREFIXES.some(p => name.startsWith(p)))
-);
+const category = ref<string | null>(null);
+// One category at a time, so the three panels opened by OK have one focus.
+const categories = computed<string[]>(() => category.value ? [category.value] : []);
 
 const scriptOptions = computed(() => {
   const all = new Set<string>();
@@ -95,7 +96,7 @@ const plan = computed<Plan>(() => {
 });
 
 function submit() {
-  if (!script.value) return;
+  if (!script.value || !category.value) return;
   const scripts = [script.value];
   for (const family of families.value) {
     const axes = gridAxes(family);
@@ -116,6 +117,7 @@ function submit() {
       family.taggings.push(tagging);
     }
   }
+  emit('start', { script: script.value, category: category.value });
   emit('close');
 }
 </script>
@@ -125,17 +127,18 @@ function submit() {
     <div class="dialog">
       <h3>Start script tagging</h3>
       <p class="hint">
-        Adds a 0-score placeholder for every family that supports the script and every
-        category below. Families with a wght axis get a variable placeholder at the wght
-        extremes, and at the wdth extremes too when they have wdth. Families that already
-        have any tagging for a category, for all scripts or for this script, are skipped.
+        Adds a 0-score placeholder for the category to every family that supports the script.
+        Families with a wght axis get a variable placeholder at the wght extremes, and at the
+        wdth extremes too when they have wdth. Families that already have any tagging for the
+        category, for all scripts or for this script, are skipped. OK then opens three panels
+        for the category: the new placeholders, every tagging for the script, and every tagging.
       </p>
 
       <h4>Script</h4>
       <v-select v-model="script" :options="scriptOptions" placeholder="Choose one script"></v-select>
 
-      <h4>Categories</h4>
-      <v-select v-model="categories" multiple :options="gf.uniqueTagNames()"></v-select>
+      <h4>Category</h4>
+      <v-select v-model="category" :options="gf.uniqueTagNames()" placeholder="Choose one category"></v-select>
 
       <div v-if="script" class="plan">
         <div><b>{{ families.length }}</b> families support {{ script }}:
@@ -145,7 +148,7 @@ function submit() {
       </div>
 
       <hr />
-      <button @click="submit" :disabled="!script || categories.length === 0 || plan.newTaggings === 0">OK</button>
+      <button @click="submit" :disabled="!script || !category">OK</button>
       <button @click="emit('close')">Cancel</button>
     </div>
   </div>
