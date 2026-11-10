@@ -7,6 +7,7 @@ import type { Panel } from './components/Panel.vue';
 import type { FilterSet } from './components/AddTags.vue';
 import { EventBus } from './eventbus';
 import { SCRIPT_TAGGING, LINT_RULES } from './config';
+import { sampleTextFor } from './pangrams';
 
 let appLoaded = ref(false);
 let showUndefined = ref(false);
@@ -56,10 +57,12 @@ function removePanel(idx: number) { panels.value.splice(idx, 1); }
 async function startScriptTagging({ script, category }: { script: string; category: string }) {
   panels.value = [];
   await nextTick();
+  // Every preview shows Latin and the script side by side
+  const sampleText = sampleTextFor([script]);
   panels.value = [
-    { type: 'categories', categories: [category], sortBy: 'score', scriptFilter: [script], placeholdersOnly: true },
-    { type: 'categories', categories: [category], sortBy: 'family', scriptFilter: [script] },
-    { type: 'categories', categories: [category], sortBy: 'score' },
+    { type: 'categories', categories: [category], sortBy: 'score', scriptFilter: [script], placeholdersOnly: true, sampleText },
+    { type: 'categories', categories: [category], sortBy: 'family', scriptFilter: [script], sampleText },
+    { type: 'categories', categories: [category], sortBy: 'score', sampleText },
   ];
 }
 function shiftLeft(idx: number) {

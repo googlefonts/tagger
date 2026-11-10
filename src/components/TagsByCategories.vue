@@ -33,6 +33,10 @@ const props = defineProps({
   initialPlaceholdersOnly: {
     type: Boolean,
     default: false
+  },
+  initialSampleText: {
+    type: String,
+    default: ''
   }
 });
 
@@ -45,7 +49,7 @@ const variableOnly = ref(false);
 const staticOnly = ref(false);
 const scriptFilter = ref<string[]>([...props.initialScriptFilter]);
 const placeholdersOnly = ref(props.initialPlaceholdersOnly);
-const sampleText = ref('');
+const sampleText = ref(props.initialSampleText);
 
 // Every script any font supports, from the family metadata subsets
 const scriptOptions = computed(() => {
