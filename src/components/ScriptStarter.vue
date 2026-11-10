@@ -7,7 +7,10 @@ import type { Font, Location, Tagging } from '../models';
 // that supports the script gets a 0-score placeholder for each chosen category,
 // tagged for that script. Families with a wght axis get a variable placeholder
 // at the wght extremes, crossed with the wdth extremes when the family has wdth.
-// Everything else gets a static placeholder.
+// Everything else gets a static placeholder. A family that already has any
+// tagging for the category, for all scripts or for this one, gets nothing: the
+// tagger reviews those on a second pass and uses Duplicate where the script
+// needs its own scores.
 
 const props = defineProps({
   gf: {
@@ -80,7 +83,7 @@ const plan = computed<Plan>(() => {
     else p.wghtWdthFamilies++;
     const rows = axes.length === 0 ? 1 : 2 ** axes.length;
     for (const categoryName of categories.value) {
-      if (family.hasTaggingForScripts(categoryName, [script.value])) {
+      if (family.hasTagging(categoryName)) {
         p.skipped++;
       } else {
         p.newTaggings++;
@@ -99,9 +102,9 @@ function submit() {
     for (const categoryName of categories.value) {
       const tag = props.gf.tags[categoryName];
       if (!tag) continue;
-      // A tagging for this script and category, even one scored 0, means a
-      // person already looked at it. Leave it alone.
-      if (family.hasTaggingForScripts(categoryName, scripts)) continue;
+      // Any tagging for the category, even one scored 0, means a person already
+      // looked at it. Leave it alone.
+      if (family.hasTagging(categoryName)) continue;
       let tagging: Tagging;
       if (axes.length === 0) {
         tagging = new StaticTagging(family, tag, 0, [...scripts]);
@@ -125,7 +128,7 @@ function submit() {
         Adds a 0-score placeholder for every family that supports the script and every
         category below. Families with a wght axis get a variable placeholder at the wght
         extremes, and at the wdth extremes too when they have wdth. Families that already
-        have a tagging for the script and category are skipped.
+        have any tagging for a category, for all scripts or for this script, are skipped.
       </p>
 
       <h4>Script</h4>
