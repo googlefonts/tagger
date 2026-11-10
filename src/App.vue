@@ -57,12 +57,13 @@ function removePanel(idx: number) { panels.value.splice(idx, 1); }
 async function startScriptTagging({ script, category }: { script: string; category: string }) {
   panels.value = [];
   await nextTick();
-  // Every preview shows Latin and the script side by side
+  // The two script panels show Latin and the script side by side. The third
+  // panel lists every family, most without the script, so it keeps the default.
   const sampleText = sampleTextFor([script]);
   panels.value = [
     { type: 'categories', categories: [category], sortBy: 'score', scriptFilter: [script], placeholdersOnly: true, sampleText },
     { type: 'categories', categories: [category], sortBy: 'family', scriptFilter: [script], sampleText },
-    { type: 'categories', categories: [category], sortBy: 'score', sampleText },
+    { type: 'categories', categories: [category], sortBy: 'score' },
   ];
 }
 function shiftLeft(idx: number) {
