@@ -11,6 +11,7 @@ import { SCRIPT_TAGGING, LINT_RULES } from './config';
 let appLoaded = ref(false);
 let showUndefined = ref(false);
 let showPlaceholderDialog = ref(false);
+let showScriptStarter = ref(false);
 let vfDisplayMode = ref<'animated' | 'list'>('animated');
 let commitRef = ref('refs/heads/main');
 
@@ -110,6 +111,7 @@ onBeforeMount(async () => {
       <button @click="addUntaggedAxesPanel()">Untagged axes</button>
       <button @click="gf?.exportTaggings()">Save changes</button>
       <button @click="showPlaceholderDialog = true">Placeholder Tags</button>
+      <button v-if="SCRIPT_TAGGING" @click="showScriptStarter = true">Start script tagging</button>
       <input type="checkbox" v-model="showUndefined">Show all</input>
       <button @click="vfDisplayMode = vfDisplayMode === 'animated' ? 'list' : 'animated'">
         VF: {{ vfDisplayMode === 'animated' ? 'Animated' : 'List' }}
@@ -118,6 +120,7 @@ onBeforeMount(async () => {
         style="width: 280px; font-family: monospace;" /></label>
       <span v-if="SCRIPT_TAGGING" class="script-mode">Script tagging: saves to families-scripts.csv</span>
       <placeholder-tag-adder v-if="showPlaceholderDialog" :gf="gf" @close="showPlaceholderDialog = false" />
+      <script-starter v-if="showScriptStarter" :gf="gf" @close="showScriptStarter = false" />
       <div style="display: flex; flex-direction: row; width: 100vw; min-height: 100vh;">
         <div v-for="(panel, idx) in panels" :key="idx"
           :style="{ flex: '1 1 0', minWidth: 0, borderRight: idx < panels.length - 1 ? '1px solid #eee' : 'none', height: '100vh', overflow: 'auto' }">
