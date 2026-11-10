@@ -31,6 +31,7 @@ const reverseTags = ref(false);
 const variableOnly = ref(false);
 const staticOnly = ref(false);
 const scriptFilter = ref<string[]>([]);
+const placeholdersOnly = ref(false);
 const sampleText = ref('');
 
 // Every script any font supports, from the family metadata subsets
@@ -109,6 +110,9 @@ const filteredTaggings: ComputedRef<Tagging[]> = computed(() => {
     const axes = axisFilter.value.split(",").map(a => a.trim().toLowerCase()).filter(Boolean);
     filtered = filtered.filter(t => axes.every(a => t.font.axes.some(ax => ax.tag.toLowerCase() === a)));
   }
+  if (placeholdersOnly.value) {
+    filtered = filtered.filter(t => t.placeholder);
+  }
   if (scriptFilter.value.length > 0) {
     // Keep fonts that support any of the chosen scripts
     filtered = filtered.filter(t => scriptFilter.value.some(s => t.font.subsets.includes(s)));
@@ -140,6 +144,7 @@ const filteredTaggings: ComputedRef<Tagging[]> = computed(() => {
         class="inline-block script-select"></v-select>
       <label><input type="checkbox" v-model="variableOnly" :disabled="staticOnly" /> Variable only</label>
       <label><input type="checkbox" v-model="staticOnly" :disabled="variableOnly" /> Static only</label>
+      <label><input type="checkbox" v-model="placeholdersOnly" /> Placeholders only</label>
       <input type="text" v-model="sampleText" placeholder="Sample text for all previews" class="sample-text-input" />
     </div>
     <div v-for="tagging in filteredTaggings" :key="tagging.font.name + tagging.tag.name + tagging.scripts.join('|')">
