@@ -24,7 +24,8 @@ const previewText = computed(() => props.sampleText.trim() || 'Hello world');
 
 onBeforeMount(() => { EventBus.$emit('ensure-loaded', props.tagging?.font.name); });
 const removeTagging = () => { props.tagging?.font.removeTagging(props.tagging) }
-const markTouched = () => { touched.value = true; }
+// On the tagging itself, so every panel that shows it turns salmon
+const markTouched = () => { if (props.tagging) props.tagging.touched = true; }
 const inputValue = (e: Event) => Number((e.target as HTMLInputElement).value);
 
 const variableScores = computed(() => {
@@ -176,7 +177,6 @@ function duplicateForScripts() {
 
 const currentLocationIndex = ref(0);
 const editing = ref(false);
-const touched = ref(false);
 let animationInterval: ReturnType<typeof setInterval> | null = null;
 
 // Build cross-product of per-axis values for animation.
@@ -266,7 +266,7 @@ onBeforeUnmount(() => {
 
 
 <template>
-    <div class="tag-view" :class="{ touched, placeholder: props.tagging?.placeholder }">
+    <div class="tag-view" :class="{ touched: props.tagging?.touched, placeholder: props.tagging?.placeholder }">
         <div class="tag-title">
             <span class="tag-name">{{ props.tagging?.tag.name }}
                 <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -1000 960 960" fill="#000000">

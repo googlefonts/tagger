@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { ComputedRef } from 'vue';
-import { onBeforeMount, ref, computed, nextTick } from 'vue';
+import { onBeforeMount, ref, computed } from 'vue';
 import { GF, Font } from './models';
 import type { Tagging } from './models';
-import type { Panel } from './components/Panel.vue';
+import type { Panel, PanelSpec } from './components/Panel.vue';
 import type { FilterSet } from './components/AddTags.vue';
 import { EventBus } from './eventbus';
 import { SCRIPT_TAGGING, LINT_RULES } from './config';
@@ -24,9 +24,13 @@ function loadFromCommit() {
 let gf = ref<GF | null>(null);
 // @ts-ignore
 window.gf = gf; // For debugging 
+let nextPanelId = 1;
+function newPanel(spec: PanelSpec): Panel {
+  return { ...spec, id: nextPanelId++ };
+}
 let panels = ref<Panel[]>([
-  { type: 'font', font: 'Roboto' },
-  { type: 'categories', categories: ['/Expressive/Loud', '/Expressive/Childlike'], }
+  newPanel({ type: 'font', font: 'Roboto' }),
+  newPanel({ type: 'categories', categories: ['/Expressive/Loud', '/Expressive/Childlike'] }),
 ]);
 
 let categories: ComputedRef<string[]> = computed(() => {
@@ -35,35 +39,31 @@ let categories: ComputedRef<string[]> = computed(() => {
 
 
 function addFontPanel(font: string) {
-  panels.value.push({ type: 'font', font });
+  panels.value.push(newPanel({ type: 'font', font }));
 }
 function addTodoPanel() {
-  panels.value.push({ type: 'todo' });
+  panels.value.push(newPanel({ type: 'todo' }));
 }
 function addUntaggedPanel() {
-  panels.value.push({ type: 'untagged' });
+  panels.value.push(newPanel({ type: 'untagged' }));
 }
 function addUntaggedAxesPanel() {
-  panels.value.push({ type: 'untagged-axes' });
+  panels.value.push(newPanel({ type: 'untagged-axes' }));
 }
 function addCategoriesPanel(categories: string[]) {
-  panels.value.push({
-    type: 'categories', categories
-  });
+  panels.value.push(newPanel({ type: 'categories', categories }));
 }
 function removePanel(idx: number) { panels.value.splice(idx, 1); }
-// After Start script tagging: three views of the category. Panels are keyed by
-// index, so clear them first to get fresh views instead of reused ones.
-async function startScriptTagging({ script, category }: { script: string; category: string }) {
-  panels.value = [];
-  await nextTick();
+// After Start script tagging: three views of the category. New panel ids give
+// fresh views even where a category panel was already open.
+function startScriptTagging({ script, category }: { script: string; category: string }) {
   // The two script panels show Latin and the script side by side. The third
   // panel lists every family, most without the script, so it keeps the default.
   const sampleText = sampleTextFor([script]);
   panels.value = [
-    { type: 'categories', categories: [category], sortBy: 'score', scriptFilter: [script], placeholdersOnly: true, sampleText },
-    { type: 'categories', categories: [category], sortBy: 'family', scriptFilter: [script], sampleText },
-    { type: 'categories', categories: [category], sortBy: 'score' },
+    newPanel({ type: 'categories', categories: [category], sortBy: 'score', scriptFilter: [script], placeholdersOnly: true, sampleText }),
+    newPanel({ type: 'categories', categories: [category], sortBy: 'family', scriptFilter: [script], sampleText }),
+    newPanel({ type: 'categories', categories: [category], sortBy: 'score' }),
   ];
 }
 function shiftLeft(idx: number) {
@@ -137,7 +137,7 @@ onBeforeMount(async () => {
       <placeholder-tag-adder v-if="showPlaceholderDialog" :gf="gf" @close="showPlaceholderDialog = false" />
       <script-starter v-if="showScriptStarter" :gf="gf" @start="startScriptTagging" @close="showScriptStarter = false" />
       <div style="display: flex; flex-direction: row; width: 100vw; min-height: 100vh;">
-        <div v-for="(panel, idx) in panels" :key="idx"
+        <div v-for="(panel, idx) in panels" :key="panel.id"
           :style="{ flex: '1 1 0', minWidth: 0, borderRight: idx < panels.length - 1 ? '1px solid #eee' : 'none', height: '100vh', overflow: 'auto' }">
           <panel :panel="panel" :gf="gf" :idx="idx" @remove-panel="removePanel(idx)" @shift-left="shiftLeft(idx)"
             @shift-right="shiftRight(idx)" :showUndefined="showUndefined" :vfDisplayMode="vfDisplayMode">

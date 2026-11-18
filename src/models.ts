@@ -125,12 +125,14 @@ export class StaticTagging {
   score: number | null;
   scripts: string[]; // Subsets this tagging applies to; empty means all
   placeholder: boolean;
+  touched: boolean; // Edited in this session; shown in every panel that lists it
   constructor(font: Font, tag: Tag, score: number | null, scripts: string[] = []) {
     this.font = font;
     this.tag = tag;
     this.score = score;
     this.scripts = scripts;
     this.placeholder = false;
+    this.touched = false;
   }
   toCSV(): string {
     if (this.score === null) {
@@ -147,6 +149,7 @@ export class VariableTagging {
   scores: { location: Location; score: number }[];
   scripts: string[]; // Subsets this tagging applies to; empty means all
   placeholder: boolean;
+  touched: boolean; // Edited in this session; shown in every panel that lists it
 
   constructor(
     font: Font,
@@ -159,6 +162,7 @@ export class VariableTagging {
     this.scores = scores;
     this.scripts = scripts;
     this.placeholder = false;
+    this.touched = false;
   }
   // Get the score for a specific location
   scoreAt(location: Location): number | undefined {
