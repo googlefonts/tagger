@@ -17,7 +17,11 @@ type UntaggedPanel = {
 type UntaggedAxesPanel = {
   type: "untagged-axes"; // Lists variable font axes with no variable tag
 };
-export type Panel = FontPanel | CategoriesPanel | TodoPanel | UntaggedPanel | UntaggedAxesPanel; // Union type for panel
+// What a panel shows
+export type PanelSpec = FontPanel | CategoriesPanel | TodoPanel | UntaggedPanel | UntaggedAxesPanel;
+// An open panel. The id keys the panel in the view, so moving or closing a
+// panel moves or closes that panel and not the one that takes its index.
+export type Panel = PanelSpec & { id: number };
 </script>
 
 <script setup lang="ts">
