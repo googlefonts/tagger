@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ComputedRef } from 'vue';
-import { onBeforeMount, ref, computed, nextTick } from 'vue';
+import { onBeforeMount, ref, computed } from 'vue';
 import { GF, Font } from './models';
 import type { Tagging } from './models';
 import type { Panel, PanelSpec } from './components/Panel.vue';
@@ -54,18 +54,16 @@ function addCategoriesPanel(categories: string[]) {
   panels.value.push(newPanel({ type: 'categories', categories }));
 }
 function removePanel(idx: number) { panels.value.splice(idx, 1); }
-// After Start script tagging: three views of the category. Panels are keyed by
-// index, so clear them first to get fresh views instead of reused ones.
-async function startScriptTagging({ script, category }: { script: string; category: string }) {
-  panels.value = [];
-  await nextTick();
+// After Start script tagging: three views of the category. New panel ids give
+// fresh views even where a category panel was already open.
+function startScriptTagging({ script, category }: { script: string; category: string }) {
   // The two script panels show Latin and the script side by side. The third
   // panel lists every family, most without the script, so it keeps the default.
   const sampleText = sampleTextFor([script]);
   panels.value = [
-    { type: 'categories', categories: [category], sortBy: 'score', scriptFilter: [script], placeholdersOnly: true, sampleText },
-    { type: 'categories', categories: [category], sortBy: 'family', scriptFilter: [script], sampleText },
-    { type: 'categories', categories: [category], sortBy: 'score' },
+    newPanel({ type: 'categories', categories: [category], sortBy: 'score', scriptFilter: [script], placeholdersOnly: true, sampleText }),
+    newPanel({ type: 'categories', categories: [category], sortBy: 'family', scriptFilter: [script], sampleText }),
+    newPanel({ type: 'categories', categories: [category], sortBy: 'score' }),
   ];
 }
 function shiftLeft(idx: number) {
