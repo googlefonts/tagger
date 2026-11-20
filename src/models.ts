@@ -150,6 +150,9 @@ export class VariableTagging {
   scripts: string[]; // Subsets this tagging applies to; empty means all
   placeholder: boolean;
   touched: boolean; // Edited in this session; shown in every panel that lists it
+  // The static score this tagging was variated from in this session, so
+  // "To static" can restore it. Null when it was variable from the start.
+  staticScore: number | null;
 
   constructor(
     font: Font,
@@ -163,6 +166,7 @@ export class VariableTagging {
     this.scripts = scripts;
     this.placeholder = false;
     this.touched = false;
+    this.staticScore = null;
   }
   // Get the score for a specific location
   scoreAt(location: Location): number | undefined {
@@ -203,6 +207,42 @@ export class VariableTagging {
 }
 export type Tagging = StaticTagging | VariableTagging;
 
+// Turn a static tagging into a variable one over the family's grid axes,
+// every corner at the static score. Returns null when the family has no
+// grid axes or the tagging has no score. The new tagging takes the old
+// one's place in the family.
+export function variateTagging(tagging: StaticTagging): VariableTagging | null {
+  const font = tagging.font;
+  const axes = font.gridAxes();
+  if (axes.length === 0 || tagging.score === null) return null;
+  const score = tagging.score;
+  const scores = font.cornerLocations(axes).map((location) => ({ location, score }));
+  const variable = new VariableTagging(font, tagging.tag, scores, [...tagging.scripts]);
+  variable.placeholder = tagging.placeholder;
+  variable.touched = true;
+  variable.staticScore = score;
+  font.replaceTagging(tagging, variable);
+  return variable;
+}
+
+// The score a variable tagging gets when it goes back to static: the score
+// it was variated from in this session, else its highest score.
+export function staticScoreFor(tagging: VariableTagging): number {
+  if (tagging.staticScore !== null) return tagging.staticScore;
+  if (tagging.scores.length === 0) return 0;
+  return Math.max(...tagging.scores.map((s) => s.score));
+}
+
+// Turn a variable tagging back into a static one. The new tagging takes the
+// old one's place in the family.
+export function staticizeTagging(tagging: VariableTagging): StaticTagging {
+  const stat = new StaticTagging(tagging.font, tagging.tag, staticScoreFor(tagging), [...tagging.scripts]);
+  stat.placeholder = tagging.placeholder;
+  stat.touched = true;
+  tagging.font.replaceTagging(tagging, stat);
+  return stat;
+}
+
 export type Exemplars = {
   // For now we keep these static
   high: StaticTagging[];
@@ -229,6 +269,28 @@ export class Font {
 
   axis(tag: string): Axis | undefined {
     return this.axes.find((axis) => axis.tag === tag);
+  }
+
+  // The axes variable tags are scored on: wght, plus wdth when present.
+  gridAxes(): string[] {
+    if (!this.axis("wght")) return [];
+    return this.axis("wdth") ? ["wght", "wdth"] : ["wght"];
+  }
+
+  // One location per corner of the grid, each axis at its min and max.
+  cornerLocations(axes: string[] = this.gridAxes()): Location[] {
+    let locations: Location[] = [{}];
+    for (const axisName of axes) {
+      const axis = this.axis(axisName);
+      if (!axis) continue;
+      const next: Location[] = [];
+      for (const location of locations) {
+        next.push({ ...location, [axisName]: axis.min });
+        next.push({ ...location, [axisName]: axis.max });
+      }
+      locations = next;
+    }
+    return locations;
   }
 
   cssStyle(fontSize = 32) {
@@ -269,6 +331,16 @@ export class Font {
 
   removeTagging(tagging: Tagging) {
     this.taggings = this.taggings.filter((t) => t !== tagging);
+  }
+
+  // Swap one tagging for another in place, so it keeps its position in lists.
+  replaceTagging(oldTagging: Tagging, newTagging: Tagging) {
+    const idx = this.taggings.indexOf(oldTagging);
+    if (idx === -1) {
+      this.taggings.push(newTagging);
+    } else {
+      this.taggings.splice(idx, 1, newTagging);
+    }
   }
 
   get url() {

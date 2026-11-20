@@ -2,7 +2,7 @@
 import { onBeforeMount, onBeforeUnmount, ref, computed } from 'vue';
 import type { PropType } from 'vue';
 import type { Tagging, Location } from '../models';
-import { StaticTagging, VariableTagging } from '../models';
+import { StaticTagging, VariableTagging, variateTagging, staticizeTagging, staticScoreFor } from '../models';
 import { EventBus } from '@/eventbus';
 import { SCRIPT_TAGGING } from '@/config';
 
@@ -24,6 +24,15 @@ const previewText = computed(() => props.sampleText.trim() || 'Hello world');
 
 onBeforeMount(() => { EventBus.$emit('ensure-loaded', props.tagging?.font.name); });
 const removeTagging = () => { props.tagging?.font.removeTagging(props.tagging) }
+
+// Static tag of a family with grid axes: can become a variable tag
+const canVariate = computed(() =>
+    props.tagging instanceof StaticTagging && props.tagging.score !== null && props.tagging.font.gridAxes().length > 0);
+const variate = () => { if (props.tagging instanceof StaticTagging) variateTagging(props.tagging); };
+// The score "To static" gives: the one it was variated from, else the highest
+const staticTarget = computed(() =>
+    props.tagging instanceof VariableTagging ? staticScoreFor(props.tagging) : null);
+const toStatic = () => { if (props.tagging instanceof VariableTagging) staticizeTagging(props.tagging); };
 // On the tagging itself, so every panel that shows it turns salmon
 const markTouched = () => { if (props.tagging) props.tagging.touched = true; }
 const inputValue = (e: Event) => Number((e.target as HTMLInputElement).value);
@@ -283,6 +292,12 @@ onBeforeUnmount(() => {
             <span class="tag-score variable-tag" v-if="props.tagging && 'scores' in props.tagging">
                 Variable tag
             </span>
+            <button v-if="canVariate" @click="variate" class="convert-btn"
+                title="Make a variable tag with this score at every corner">Variate</button>
+            <button v-if="staticTarget !== null" @click="toStatic" class="convert-btn"
+                :title="props.tagging && 'staticScore' in props.tagging && props.tagging.staticScore !== null
+                    ? 'Back to the static score it had' : 'A static tag with the highest score'">
+                To static ({{ staticTarget }})</button>
             <button @click="removeTagging" class="remove-tag-btn">Remove</button>
         </div>
         <div v-if="SCRIPT_TAGGING && props.tagging" class="tag-scripts">
