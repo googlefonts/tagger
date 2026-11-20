@@ -1,13 +1,12 @@
 <script lang="ts">
-import { VariableTagging } from '@/models';
-import type { Tagging, Location } from '@/models';
+import type { Tagging } from '@/models';
 </script>
 
 <script setup lang="ts">
 import { EventBus } from '@/eventbus';
 import { SCRIPT_TAGGING, LINT_RULES } from '@/config';
 import { GF } from '@/models';
-import { StaticTagging } from '@/models';
+import { StaticTagging, variateTagging } from '@/models';
 import { computed, defineProps, onBeforeMount, onBeforeUpdate, ref } from 'vue';
 
 const props = defineProps({
@@ -98,24 +97,9 @@ const addToFamily = (tagging: Tagging) => {
   selectedFamily.value?.addTagging(tagging);
 };
 
+// A grid over wght and wdth, every corner at the static score
 const convertToVariable = (tagging: Tagging) => {
-  if (!selectedFamily.value?.isVF) return;
-  // One row for every corner of the designspace, so multi-axis tags form
-  // a complete grid
-  let corners: Location[] = [{}];
-  for (let axis of selectedFamily.value.axes) {
-    const next: Location[] = [];
-    for (const corner of corners) {
-      next.push({ ...corner, [axis.tag]: axis.min });
-      next.push({ ...corner, [axis.tag]: axis.max });
-    }
-    corners = next;
-  }
-  const extremePositions = corners.map((location) => ({ location, score: tagging.score || 0 }));
-  const newTagging: VariableTagging = new VariableTagging(selectedFamily.value, tagging.tag, extremePositions, [...tagging.scripts]);
-  // Copy over the score as the default value
-  selectedFamily.value.removeTagging(tagging);
-  selectedFamily.value.addTagging(newTagging);
+  if (tagging instanceof StaticTagging) variateTagging(tagging);
 };
 
 </script>
@@ -147,7 +131,7 @@ const convertToVariable = (tagging: Tagging) => {
           placeholder="All scripts" class="inline-block script-select"></v-select>
         <button @click="removeTagging(tagging)">x</button>
         <button @click="convertToVariable(tagging)"
-          v-if="selectedFamily?.isVF && !('scores' in tagging)">Variate</button>
+          v-if="selectedFamily?.gridAxes().length && !('scores' in tagging) && tagging.score !== null">Variate</button>
       </li>
     </ul>
     <ul v-if="showUndefined">

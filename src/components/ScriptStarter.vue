@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { GF, StaticTagging, VariableTagging } from '../models';
-import type { Font, Location, Tagging } from '../models';
+import type { Font, Tagging } from '../models';
 
 // Scripts build only. One dialog to set up a tagger for a script and category:
 // every family that supports the script gets a 0-score placeholder for the
@@ -43,27 +43,6 @@ const families = computed<Font[]>(() => {
   return props.gf.families.filter(f => f.subsets.includes(script.value!));
 });
 
-// The grid axes a family is scored on: wght, plus wdth when present.
-function gridAxes(family: Font): string[] {
-  if (!family.axis('wght')) return [];
-  return family.axis('wdth') ? ['wght', 'wdth'] : ['wght'];
-}
-
-// One location per corner of the grid, each axis at its min and max.
-function cornerLocations(family: Font, axes: string[]): Location[] {
-  let locations: Location[] = [{}];
-  for (const axisName of axes) {
-    const axis = family.axis(axisName)!;
-    const next: Location[] = [];
-    for (const location of locations) {
-      next.push({ ...location, [axisName]: axis.min });
-      next.push({ ...location, [axisName]: axis.max });
-    }
-    locations = next;
-  }
-  return locations;
-}
-
 interface Plan {
   staticFamilies: number;
   wghtFamilies: number;
@@ -78,7 +57,7 @@ const plan = computed<Plan>(() => {
   const p: Plan = { staticFamilies: 0, wghtFamilies: 0, wghtWdthFamilies: 0, newTaggings: 0, newRows: 0, skipped: 0 };
   if (!script.value) return p;
   for (const family of families.value) {
-    const axes = gridAxes(family);
+    const axes = family.gridAxes();
     if (axes.length === 0) p.staticFamilies++;
     else if (axes.length === 1) p.wghtFamilies++;
     else p.wghtWdthFamilies++;
@@ -99,7 +78,7 @@ function submit() {
   if (!script.value || !category.value) return;
   const scripts = [script.value];
   for (const family of families.value) {
-    const axes = gridAxes(family);
+    const axes = family.gridAxes();
     for (const categoryName of categories.value) {
       const tag = props.gf.tags[categoryName];
       if (!tag) continue;
@@ -110,7 +89,7 @@ function submit() {
       if (axes.length === 0) {
         tagging = new StaticTagging(family, tag, 0, [...scripts]);
       } else {
-        const scores = cornerLocations(family, axes).map(location => ({ location, score: 0 }));
+        const scores = family.cornerLocations(axes).map(location => ({ location, score: 0 }));
         tagging = new VariableTagging(family, tag, scores, [...scripts]);
       }
       tagging.placeholder = true;
