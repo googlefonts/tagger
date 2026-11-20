@@ -231,6 +231,28 @@ export class Font {
     return this.axes.find((axis) => axis.tag === tag);
   }
 
+  // The axes variable tags are scored on: wght, plus wdth when present.
+  gridAxes(): string[] {
+    if (!this.axis("wght")) return [];
+    return this.axis("wdth") ? ["wght", "wdth"] : ["wght"];
+  }
+
+  // One location per corner of the grid, each axis at its min and max.
+  cornerLocations(axes: string[] = this.gridAxes()): Location[] {
+    let locations: Location[] = [{}];
+    for (const axisName of axes) {
+      const axis = this.axis(axisName);
+      if (!axis) continue;
+      const next: Location[] = [];
+      for (const location of locations) {
+        next.push({ ...location, [axisName]: axis.min });
+        next.push({ ...location, [axisName]: axis.max });
+      }
+      locations = next;
+    }
+    return locations;
+  }
+
   cssStyle(fontSize = 32) {
     if (!this.isVF) {
       return `font-family: '${this.name}'; font-size: ${fontSize}pt;`;

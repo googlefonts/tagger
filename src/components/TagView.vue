@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeMount, onBeforeUnmount, ref, computed } from 'vue';
+import { onBeforeMount, onBeforeUnmount, ref, computed, watch } from 'vue';
 import type { PropType } from 'vue';
 import type { Tagging, Location } from '../models';
 import { StaticTagging, VariableTagging } from '../models';
@@ -183,9 +183,13 @@ let animationInterval: ReturnType<typeof setInterval> | null = null;
 // E.g. scores [{location:{wdth:75}}, {location:{wdth:100}}, {location:{wght:400}}, {location:{wght:900}}]
 // becomes [{wdth:75,wght:400}, {wdth:75,wght:900}, {wdth:100,wght:400}, {wdth:100,wght:900}]
 const animationFrames = computed(() => {
-    if (!props.tagging || !('scores' in props.tagging) || props.tagging.scores.length === 0) {
-        return [];
+    if (!props.tagging) return [];
+    if (!('scores' in props.tagging)) {
+        // A static tag of a variable family: cycle through the corners of the
+        // family's grid axes, so the tagger sees the whole range
+        return props.vfDisplayMode === 'animated' ? props.tagging.font.cornerLocations() : [];
     }
+    if (props.tagging.scores.length === 0) return [];
     // Collect unique values per axis
     const axisValues: Record<string, number[]> = {};
     for (const entry of props.tagging.scores) {
@@ -250,13 +254,21 @@ const previewGroups = computed<PreviewGroup[]>(() => {
     }));
 });
 
-onBeforeMount(() => {
-    if (animationFrames.value.length > 1) {
+// Run the interval only while there is more than one frame. The tagging can
+// change under this card (Variate, To static), so this is a watch, not a
+// one-off at mount.
+function syncAnimation() {
+    const wanted = animationFrames.value.length > 1;
+    if (wanted && !animationInterval) {
         animationInterval = setInterval(() => {
             if (!editing.value) currentLocationIndex.value++;
         }, 2000);
+    } else if (!wanted && animationInterval) {
+        clearInterval(animationInterval);
+        animationInterval = null;
     }
-});
+}
+watch(() => animationFrames.value.length, syncAnimation, { immediate: true });
 
 onBeforeUnmount(() => {
     if (animationInterval) clearInterval(animationInterval);
