@@ -16,6 +16,7 @@ import Todo from "./components/Todo.vue";
 import UntaggedFamilies from "./components/UntaggedFamilies.vue";
 import UntaggedAxes from "./components/UntaggedAxes.vue";
 import PlaceholderTagAdder from "./components/PlaceholderTagAdder.vue";
+import LazyCard from "./components/LazyCard.vue";
 import ScriptStarter from "./components/ScriptStarter.vue";
 import vSelect from "vue-select";
 
@@ -34,6 +35,7 @@ Vue.component("untagged-axes", UntaggedAxes);
 Vue.component("sample-text", SampleText);
 Vue.component("placeholder-tag-adder", PlaceholderTagAdder);
 Vue.component("script-starter", ScriptStarter);
+Vue.component("lazy-card", LazyCard);
 
 var app = new Vue({
   el: "#app",
