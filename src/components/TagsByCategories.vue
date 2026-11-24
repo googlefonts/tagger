@@ -3,6 +3,13 @@ import type { ComputedRef } from 'vue';
 import { computed, ref, defineProps } from 'vue';
 import { GF, StaticTagging, VariableTagging } from '../models';
 import type { Tagging } from '../models';
+import { SCRIPT_TAGGING } from '@/config';
+
+// Height of a card before it is first rendered, measured in Chrome: a static
+// card, a variable card, and the scripts row the scripts build adds to both
+function cardHeight(tagging: Tagging): number {
+  return ('scores' in tagging ? 230 : 130) + (SCRIPT_TAGGING ? 45 : 0);
+}
 
 const props = defineProps({
   gf: {
@@ -164,8 +171,9 @@ const filteredTaggings: ComputedRef<Tagging[]> = computed(() => {
       <label><input type="checkbox" v-model="placeholdersOnly" /> Placeholders only</label>
       <input type="text" v-model="sampleText" placeholder="Sample text for all previews" class="sample-text-input" />
     </div>
-    <div v-for="tagging in filteredTaggings" :key="tagging.font.name + tagging.tag.name + tagging.scripts.join('|')">
+    <lazy-card v-for="tagging in filteredTaggings" :key="tagging.font.name + tagging.tag.name + tagging.scripts.join('|')"
+      :estimatedHeight="cardHeight(tagging)">
       <tag-view :tagging="tagging" :vfDisplayMode="props.vfDisplayMode" :sampleText="sampleText"></tag-view>
-    </div>
+    </lazy-card>
   </div>
 </template>

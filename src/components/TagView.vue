@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { onBeforeMount, onBeforeUnmount, ref, computed, watch } from 'vue';
+import { onBeforeMount, onBeforeUnmount, onMounted, ref, computed, watch } from 'vue';
 import type { PropType } from 'vue';
 import type { Tagging, Location } from '../models';
 import { StaticTagging, VariableTagging, variateTagging, staticizeTagging, staticScoreFor } from '../models';
 import { EventBus } from '@/eventbus';
 import { SCRIPT_TAGGING } from '@/config';
+import { onAnimationTick } from '@/animation';
+import { observeVisibility } from '@/visibility';
 
 const props = defineProps({
     tagging: Object as PropType<Tagging>,
@@ -186,7 +188,11 @@ function duplicateForScripts() {
 
 const currentLocationIndex = ref(0);
 const editing = ref(false);
-let animationInterval: ReturnType<typeof setInterval> | null = null;
+let stopAnimation: (() => void) | null = null;
+// Whether the card is on screen; an off-screen preview is not animated
+const onScreen = ref(true);
+const root = ref<HTMLElement | null>(null);
+let stopWatchingScreen: (() => void) | null = null;
 
 // Build cross-product of per-axis values for animation.
 // E.g. scores [{location:{wdth:75}}, {location:{wdth:100}}, {location:{wght:400}}, {location:{wght:900}}]
@@ -232,7 +238,7 @@ const animatedStyle = computed(() => {
         return props.tagging.font.cssStyle(32);
     }
     const location = animationFrames.value[currentLocationIndex.value % animationFrames.value.length];
-    let style = `font-family: '${props.tagging.font.name}'; font-size: 32pt; transition: font-variation-settings 1s ease; font-variation-settings:`;
+    let style = `font-family: '${props.tagging.font.name}'; font-size: 32pt; transition: font-variation-settings 0.5s ease; font-variation-settings:`;
     style += Object.entries(location).map(([tag, val]) => ` '${tag}' ${val}`).join(',');
     style += ';';
     return style;
@@ -263,31 +269,37 @@ const previewGroups = computed<PreviewGroup[]>(() => {
     }));
 });
 
-// Run the interval only while there is more than one frame. The tagging can
-// change under this card (Variate, To static), so this is a watch, not a
-// one-off at mount.
+// Animate only while there is more than one frame and the card is on
+// screen. The tagging can change under this card (Variate, To static), so
+// this is a watch, not a one-off at mount. The ticks come from one shared
+// clock, see animation.ts.
 function syncAnimation() {
-    const wanted = animationFrames.value.length > 1;
-    if (wanted && !animationInterval) {
-        animationInterval = setInterval(() => {
+    const wanted = animationFrames.value.length > 1 && onScreen.value;
+    if (wanted && !stopAnimation) {
+        stopAnimation = onAnimationTick(() => {
             if (!editing.value) currentLocationIndex.value++;
-        }, 2000);
-    } else if (!wanted && animationInterval) {
-        clearInterval(animationInterval);
-        animationInterval = null;
+        });
+    } else if (!wanted && stopAnimation) {
+        stopAnimation();
+        stopAnimation = null;
     }
 }
-watch(() => animationFrames.value.length, syncAnimation, { immediate: true });
+watch(() => [animationFrames.value.length, onScreen.value], syncAnimation, { immediate: true });
+
+onMounted(() => {
+    if (root.value) stopWatchingScreen = observeVisibility(root.value, (visible) => { onScreen.value = visible; });
+});
 
 onBeforeUnmount(() => {
-    if (animationInterval) clearInterval(animationInterval);
+    if (stopAnimation) stopAnimation();
+    if (stopWatchingScreen) stopWatchingScreen();
 });
 
 </script>
 
 
 <template>
-    <div class="tag-view" :class="{ touched: props.tagging?.touched, placeholder: props.tagging?.placeholder }">
+    <div ref="root" class="tag-view" :class="{ touched: props.tagging?.touched, placeholder: props.tagging?.placeholder }">
         <div class="tag-title">
             <span class="tag-name">{{ props.tagging?.tag.name }}
                 <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -1000 960 960" fill="#000000">

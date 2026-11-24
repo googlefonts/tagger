@@ -115,8 +115,8 @@ onBeforeMount(async () => {
 
 <template>
   <div id="app">
-    <div id="fonts" :key="gf?.loadedFamilies.length">
-      <link v-for="family in gf?.loadedFamilies" :href="family.url" rel="stylesheet">
+    <div id="fonts">
+      <link v-for="family in gf?.loadedFamilies" :key="family.name" :href="family.url" rel="stylesheet">
     </div>
     <div id="content" v-if="appLoaded">
       <button @click="addFontPanel('Maven Pro')">Tags in font</button>
