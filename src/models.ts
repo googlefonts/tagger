@@ -115,6 +115,50 @@ export function scriptsFromCSV(field: string | undefined): string[] {
   return field.split("|").map((s) => s.trim()).filter((s) => s !== "");
 }
 
+// Split one CSV line into fields, respecting quoted values such as
+// "wdth,wght@75,400"
+export function parseCSVLine(line: string): string[] {
+  const fields: string[] = [];
+  let i = 0;
+  while (i < line.length) {
+    if (line[i] === '"') {
+      const end = line.indexOf('"', i + 1);
+      if (end === -1) { fields.push(line.slice(i + 1)); break; }
+      fields.push(line.slice(i + 1, end));
+      i = end + 2; // skip closing quote and comma
+    } else {
+      const end = line.indexOf(',', i);
+      if (end === -1) { fields.push(line.slice(i)); break; }
+      fields.push(line.slice(i, end));
+      i = end + 1;
+    }
+  }
+  return fields;
+}
+
+// What identifies a tagging in the CSV: its family, tag and scripts. The
+// keys sort the same way the file is sorted, by family then tag.
+export function taggingKey(family: string, tag: string, scripts: string[]): string {
+  return `${family},${tag},${scriptsToCSV(scripts)}`;
+}
+
+// The lines of a tags CSV grouped by tagging, in file order. A variable
+// tagging has one line per location.
+export function groupCSVRows(csvText: string): Map<string, string[]> {
+  const rows = new Map<string, string[]>();
+  for (const rawLine of csvText.split("\n")) {
+    const line = rawLine.trimEnd();
+    if (line === "") continue;
+    const [family, , tag, , scriptStr] = parseCSVLine(line);
+    if (!family || !tag) continue;
+    const key = taggingKey(family, tag, scriptsFromCSV(scriptStr));
+    const lines = rows.get(key);
+    if (lines) lines.push(line);
+    else rows.set(key, [line]);
+  }
+  return rows;
+}
+
 // An association between a tag and a font which applies to all parts of the designspace
 export class StaticTagging {
   // The font family this tagging applies to.
@@ -390,6 +434,9 @@ export class GF {
   linter: any; // Linter instance
   commit: string; // Git commit hash or branch name in google/fonts for tag data
   prNumber: number | null; // PR number if loaded from a PR URL
+  // Every tagging as it was loaded, keyed by taggingKey, as CSV text. Save
+  // changes compares against this to find what this session changed.
+  baselineRows: Map<string, string>;
 
   constructor() {
     this.familyData = {};
@@ -400,6 +447,7 @@ export class GF {
     this.loadedFamilies = [];
     this.commit = "refs/heads/main";
     this.prNumber = null;
+    this.baselineRows = new Map();
   }
   async getFamilyData() {
     let data = await loadText("family_data.json");
@@ -589,23 +637,7 @@ export class GF {
         // Collect variable tag entries keyed by "familyName,tagName"
         const variableEntries: Record<string, { family: Font; tag: Tag; scores: { location: Location; score: number }[]; scripts: string[] }> = {};
         for (let line of lines) {
-          // Parse CSV fields respecting quoted values (e.g. "WONK,wdth,wght@1,75,100")
-          const fields: string[] = [];
-          let i = 0;
-          while (i < line.length) {
-            if (line[i] === '"') {
-              const end = line.indexOf('"', i + 1);
-              if (end === -1) { fields.push(line.slice(i + 1)); break; }
-              fields.push(line.slice(i + 1, end));
-              i = end + 2; // skip closing quote and comma
-            } else {
-              const end = line.indexOf(',', i);
-              if (end === -1) { fields.push(line.slice(i)); break; }
-              fields.push(line.slice(i, end));
-              i = end + 1;
-            }
-          }
-          const [familyName, axisStr, tagName, scoreStr, scriptStr] = fields;
+          const [familyName, axisStr, tagName, scoreStr, scriptStr] = parseCSVLine(line);
           let score: number = parseFloat(scoreStr);
           const scripts = scriptsFromCSV(scriptStr);
           if (!familyName || !tagName) {
@@ -645,41 +677,86 @@ export class GF {
         for (const entry of Object.values(variableEntries)) {
           entry.family.taggings.push(new VariableTagging(entry.family, entry.tag, entry.scores, entry.scripts));
         }
+        this.baselineRows = this.currentRows();
       })
       .catch((error) => {
         console.error("Error loading taggings:", error);
       });
   }
 
-  exportTaggings() {
-    // Sort to match https://google.github.io/fonts/tags.html
-    // which sorts all taggings by "displayName,category" using
-    // case-sensitive string comparison (not localeCompare)
-    const allTaggings: Tagging[] = [];
+  // Every tagging in memory that has a score, keyed by taggingKey, as CSV
+  // text
+  currentRows(): Map<string, string> {
+    const rows = new Map<string, string>();
     for (const family of this.families) {
       for (const tagging of family.taggings) {
-        if (tagging.toCSV() !== "") {
-          allTaggings.push(tagging);
-        }
+        const csv = tagging.toCSV();
+        if (csv === "") continue;
+        rows.set(taggingKey(family.name, tagging.tag.name, tagging.scripts), csv);
       }
     }
-    allTaggings.sort((a, b) => {
-      const aKey = `${a.font.name},${a.tag.name}`;
-      const bKey = `${b.font.name},${b.tag.name}`;
-      if (aKey < bKey) return -1;
-      if (aKey > bKey) return 1;
-      return 0;
-    });
-    let csv = "";
-    for (const tagging of allTaggings) {
-      csv += tagging.toCSV();
+    return rows;
+  }
+
+  // The CSV to save: the file as it is on GitHub now, with this session's
+  // edits laid over it. A tagging this session did not change keeps the
+  // rows in the file, which other taggers may have changed since this page
+  // loaded. A tagging this session changed, added or removed takes its
+  // state from memory. Rows for families or tags the app does not know
+  // are kept as they are.
+  mergedCSV(latestText: string): string {
+    const rows = groupCSVRows(latestText);
+    const current = this.currentRows();
+    const keys = new Set([...this.baselineRows.keys(), ...current.keys()]);
+    for (const key of keys) {
+      const before = this.baselineRows.get(key);
+      const now = current.get(key);
+      if (before === now) continue;
+      if (now === undefined) rows.delete(key);
+      else rows.set(key, now.trimEnd().split("\n"));
+    }
+    // Sort to match https://google.github.io/fonts/tags.html, which sorts
+    // by "displayName,category" with case-sensitive string comparison
+    const sortedKeys = [...rows.keys()].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+    return sortedKeys.map((key) => rows.get(key)!.join("\n")).join("\n") + "\n";
+  }
+
+  // The CSV of everything in memory, used when the file on GitHub cannot
+  // be fetched
+  fullCSV(): string {
+    const current = this.currentRows();
+    const sortedKeys = [...current.keys()].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+    return sortedKeys.map((key) => current.get(key)).join("");
+  }
+
+  // Fetch the tags CSV as it is now at this.commit
+  async fetchLatestCSV(): Promise<string> {
+    // The query string keeps the CDN from serving a copy cached at page load
+    const url = `https://raw.githubusercontent.com/google/fonts/${this.commit}/${TAGS_CSV_PATH}?t=${Date.now()}`;
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch tags: ${response.status} ${response.statusText}`);
+    }
+    return response.text();
+  }
+
+  async exportTaggings() {
+    let csv: string;
+    try {
+      csv = this.mergedCSV(await this.fetchLatestCSV());
+    } catch (error) {
+      console.error("Could not fetch the latest tags, saving the in-memory copy:", error);
+      alert("Could not fetch the latest tags from GitHub. The copy in the clipboard is this page's copy, and may overwrite changes other taggers made since this page loaded.");
+      csv = this.fullCSV();
     }
     // Yeah, I guess this is neater than fiddling with octokit
-    navigator.clipboard.writeText(csv);
+    await navigator.clipboard.writeText(csv);
     let editUrl = `https://github.com/google/fonts/edit/${this.commit}/${TAGS_CSV_PATH}`;
     if (this.prNumber) {
       editUrl += `?pr=/google/fonts/pull/${this.prNumber}`;
     }
-    window.open(editUrl);
+    if (!window.open(editUrl)) {
+      alert(`The tags are in the clipboard. The browser blocked the GitHub editor window; open ${editUrl} and paste.`);
+    }
   }
 }
